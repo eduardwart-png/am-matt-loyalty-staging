@@ -1,19 +1,24 @@
-/* design-tokens.css — Am-Matt Design System (aus echtem Branding abgeleitet, keine 1:1-Kopie der alten Seite) */
+/* design-tokens.css — Am-Matt Design System v2 (veredelt nach Referenz-Analyse: Lidl/Payback-Kartenmuster, Renés Am-Matt-Demo-Struktur, echte Am-Matt-Bildsprache) */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap');
+
 :root {
-  --am-matt-primary: #1B4D3E;      /* tiefes Waldgrün, bergisch-gastronomisch, hochwertig */
-  --am-matt-primary-dark: #0F332A;
-  --am-matt-accent: #C9A24B;       /* warmes Gold, Premium-Anmutung */
-  --am-matt-accent-light: #E4C878;
-  --am-matt-bg: #FAF8F3;           /* warmes Off-White */
+  /* Warmes bergisches Fachwerkhaus statt kaltem Corporate-Grün: Terrakotta/Wein + Waldgrün + warmes Gold auf cremigem Papierton */
+  --am-matt-primary: #6B2E2E;        /* warmes Weinrot/Terrakotta — Gastro, einladend, nicht Tech */
+  --am-matt-primary-dark: #4A1F1F;
+  --am-matt-forest: #2F4A3C;         /* Waldgrün als Sekundärfarbe (Terrasse/Natur) */
+  --am-matt-accent: #C9962E;         /* warmes Gold — Prämien/Highlights */
+  --am-matt-accent-light: #EBD9A8;
+  --am-matt-bg: #FBF6EC;             /* warmes Creme-Papier statt reinweiß */
+  --am-matt-bg-warm: #F5EBD9;
   --am-matt-surface: #FFFFFF;
-  --am-matt-text: #1E2422;
-  --am-matt-text-muted: #5F6A64;
-  --am-matt-border: #E7E2D6;
+  --am-matt-text: #2B2320;
+  --am-matt-text-muted: #6E6259;
+  --am-matt-border: #E9DCC6;
   --am-matt-success: #2E7D4F;
-  --am-matt-danger: #B3413B;
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
+  --am-matt-danger: #A5382E;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -22,12 +27,13 @@
   --space-6: 32px;
   --font-display: 'Fraunces', Georgia, serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --shadow-card: 0 2px 12px rgba(27, 77, 62, 0.08);
-  --shadow-elevated: 0 8px 24px rgba(27, 77, 62, 0.14);
+  --shadow-card: 0 4px 16px rgba(75, 43, 30, 0.08);
+  --shadow-elevated: 0 12px 32px rgba(75, 43, 30, 0.18);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
 }
 
-* { box-sizing: border-box; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; padding: 0; }
 body {
   font-family: var(--font-body);
@@ -47,6 +53,7 @@ img { max-width: 100%; display: block; }
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
   padding: var(--space-4);
+  border: 1px solid var(--am-matt-border);
 }
 
 .btn {
@@ -54,24 +61,28 @@ img { max-width: 100%; display: block; }
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  padding: 14px 20px;
+  padding: 15px 20px;
   border-radius: var(--radius-md);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 15px;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  letter-spacing: 0.01em;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 .btn:active { transform: scale(0.97); }
-.btn-primary { background: var(--am-matt-primary); color: white; }
-.btn-accent { background: var(--am-matt-accent); color: var(--am-matt-primary-dark); }
+.btn-primary { background: var(--am-matt-primary); color: #FFF5EA; }
+.btn-primary:hover { background: var(--am-matt-primary-dark); }
+.btn-accent { background: var(--am-matt-accent); color: #3A2A0A; }
 .btn-outline { background: transparent; border: 1.5px solid var(--am-matt-border); color: var(--am-matt-text); }
 .btn-full { width: 100%; }
+.btn[disabled] { background: #E4DCCC; color: #9C927F; cursor: not-allowed; }
 
-.pill { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; }
-.pill-demo { background: #FFF3CD; color: #8A6D1E; }
+.pill { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; }
+.pill-demo { background: #F3E3B8; color: #7A5A0F; }
 .pill-veg { background: #E4F3E7; color: var(--am-matt-success); }
+.pill-live { background: #E4EFE7; color: var(--am-matt-forest); }
 
 .skeleton {
-  background: linear-gradient(90deg, #EFEBE0 25%, #F5F2E8 50%, #EFEBE0 75%);
+  background: linear-gradient(90deg, #EFE6D2 25%, #F7F0E1 50%, #EFE6D2 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
   border-radius: var(--radius-sm);
@@ -80,20 +91,32 @@ img { max-width: 100%; display: block; }
 
 .toast {
   position: fixed;
-  bottom: calc(88px + var(--safe-bottom));
+  bottom: calc(96px + var(--safe-bottom));
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) translateY(20px);
   background: var(--am-matt-primary-dark);
-  color: white;
-  padding: 12px 20px;
+  color: #FFF5EA;
+  padding: 13px 22px;
   border-radius: var(--radius-md);
   font-size: 14px;
+  font-weight: 600;
   box-shadow: var(--shadow-elevated);
   z-index: 1000;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition: opacity 0.28s ease, transform 0.28s ease;
+  max-width: calc(100% - 32px);
+  text-align: center;
 }
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .toast.error { background: var(--am-matt-danger); }
-.toast.success { background: var(--am-matt-success); }
+.toast.success { background: var(--am-matt-forest); }
+
+/* Demo-Vorschau-Badge (global sichtbar, kein Login nötig für Vorschau-Modus) */
+.preview-badge {
+  position: fixed; top: calc(10px + var(--safe-top)); left: 50%; transform: translateX(-50%);
+  background: var(--am-matt-accent); color: #3A2A0A; font-size: 11px; font-weight: 800;
+  letter-spacing: 0.04em; text-transform: uppercase; padding: 6px 14px; border-radius: 999px;
+  box-shadow: var(--shadow-card); z-index: 2000; display: none;
+}
+.preview-badge.show { display: block; }
