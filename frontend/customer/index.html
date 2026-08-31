@@ -112,6 +112,7 @@
   .nav-item.active { color: var(--am-matt-brass); }
   .nav-item .ic { font-size: 20px; line-height: 1; filter: grayscale(1) opacity(0.7); }
   .nav-item.active .ic { filter: none; }
+  .nav-item svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; }
 
   /* SPEISEKARTE */
   .menu-header { padding: calc(74px + var(--safe-top)) var(--space-4) var(--space-4); background: var(--am-matt-ink); color: #FBF6E9; }
@@ -315,11 +316,11 @@
 
   <!-- BOTTOM NAV -->
   <nav class="bottom-nav" id="bottom-nav">
-    <button class="nav-item active" data-view="start"><span class="ic">🏠</span><span>Start</span></button>
-    <button class="nav-item" data-view="menu"><span class="ic">📖</span><span>Karte</span></button>
-    <button class="nav-item" data-view="coupons"><span class="ic">🎟️</span><span>Coupons</span></button>
-    <button class="nav-item" data-view="rewards"><span class="ic">⭐</span><span>Prämien</span></button>
-    <button class="nav-item" data-view="qr"><span class="ic">📇</span><span>Ausweis</span></button>
+    <button class="nav-item active" data-view="start"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg><span>Start</span></button>
+    <button class="nav-item" data-view="menu"><svg viewBox="0 0 24 24"><path d="M4 3v18M8 3v6a2 2 0 0 0 4 0V3M16 3v18M16 3c2 0 4 2 4 5s-2 5-4 5"/></svg><span>Karte</span></button>
+    <button class="nav-item" data-view="coupons"><svg viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V8z"/><path d="M10 6v12" stroke-dasharray="2 2"/></svg><span>Coupons</span></button>
+    <button class="nav-item" data-view="rewards"><svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.4l-6.1 3.2 1.4-6.8-5.1-4.7 6.9-.8z"/></svg><span>Prämien</span></button>
+    <button class="nav-item" data-view="qr"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM19 14h2M14 19h2M19 19h2v2"/></svg><span>Ausweis</span></button>
   </nav>
 
   <div class="toast" id="toast"></div>
