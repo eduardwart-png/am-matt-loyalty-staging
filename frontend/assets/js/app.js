@@ -340,6 +340,15 @@ async function loadMenu() {
       });
     });
 
+    // Scroll-Pfeil: nur zeigen, solange die Tab-Leiste noch weiter nach rechts scrollbar ist
+    const tabsWrap = document.querySelector('.menu-tabs-wrap');
+    function updateTabsEndState() {
+      const atEnd = tabs.scrollWidth - tabs.scrollLeft - tabs.clientWidth < 8;
+      tabsWrap.classList.toggle('at-end', atEnd);
+    }
+    updateTabsEndState();
+    tabs.addEventListener('scroll', updateTabsEndState, { passive: true });
+
     // Scroll-Spy: aktiver Tab folgt der sichtbaren Kategorie beim Scrollen
     const catSections = categories.map(c => document.getElementById('menu-cat-' + c.id)).filter(Boolean);
     function updateActiveTabOnScroll() {
