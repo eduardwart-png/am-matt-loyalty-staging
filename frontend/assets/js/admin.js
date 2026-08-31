@@ -130,20 +130,35 @@ document.getElementById('coupon-create-btn').addEventListener('click', async () 
   }
 });
 
-// --- MENÜ (read-only Übersicht in MVP, Bearbeitung via PATCH-API vorbereitet) ---
+// --- MENÜ (Preis inline editierbar, config-over-code — §15-21) ---
 async function loadMenu() {
   try {
     const { categories, items } = await api('/menu');
     const catMap = Object.fromEntries(categories.map(c => [c.id, c.name]));
     const tbody = document.querySelector('#menu-table tbody');
     tbody.innerHTML = items.map(i => `
-      <tr>
+      <tr data-id="${i.id}">
         <td>${esc(catMap[i.category_id] || '—')}</td>
         <td>${esc(i.name)}</td>
-        <td>${i.price != null ? i.price.toFixed(2) + ' €' : '—'}</td>
+        <td><input type="number" step="0.10" class="menu-price-input" data-id="${i.id}" value="${i.price != null ? i.price.toFixed(2) : ''}" style="width:80px;padding:5px 7px;border-radius:6px;border:1.5px solid var(--am-matt-border)"></td>
         <td><span class="status-badge ${i.status === 'verified' ? 'status-live' : 'status-scheduled'}">${i.status === 'verified' ? 'Verifiziert' : 'Ungeprüft'}</span></td>
+        <td><button class="btn btn-outline menu-save-btn" data-id="${i.id}" style="padding:6px 12px;font-size:12px">Speichern</button></td>
       </tr>
     `).join('');
+
+    tbody.querySelectorAll('.menu-save-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const input = tbody.querySelector(`.menu-price-input[data-id="${id}"]`);
+        const price = parseFloat(input.value);
+        if (isNaN(price) || price < 0) return alert('Ungültiger Preis');
+        try {
+          await api(`/menu/items/${id}`, { method: 'PATCH', body: JSON.stringify({ price }) });
+          btn.textContent = '✓ Gespeichert';
+          setTimeout(() => { btn.textContent = 'Speichern'; }, 1500);
+        } catch (err) { alert('Fehler beim Speichern des Preises'); }
+      });
+    });
   } catch (err) { if (err.status === 401) return exitApp(); }
 }
 
