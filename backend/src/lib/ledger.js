@@ -1,31 +1,33 @@
 // lib/ledger.js — Loyalty Ledger: jede Punktebuchung ist eine Transaktion, Balance wird daraus abgeleitet.
-const { db } = require('../db');
+const { query } = require('../db');
 
-function getBalance(tenantId, customerId) {
-  const row = db.prepare(
+async function getBalance(tenantId, customerId) {
+  const { rows } = await query(
     `SELECT COALESCE(SUM(value), 0) as balance FROM loyalty_ledger
-     WHERE tenant_id = ? AND customer_id = ? AND status = 'confirmed'`
-  ).get(tenantId, customerId);
-  return row.balance;
-}
-
-function addTransaction(tenantId, customerId, value, reason, source, actor, reference = null) {
-  const insert = db.prepare(
-    `INSERT INTO loyalty_ledger (tenant_id, customer_id, value, reason, source, actor, reference)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
+     WHERE tenant_id = $1 AND customer_id = $2 AND status = 'confirmed'`,
+    [tenantId, customerId]
   );
-  const info = insert.run(tenantId, customerId, value, reason, source, actor, reference);
-  const newBalance = getBalance(tenantId, customerId);
-  db.prepare(`UPDATE customers SET points_balance = ?, updated_at = datetime('now') WHERE id = ?`)
-    .run(newBalance, customerId);
-  return { ledgerId: info.lastInsertRowid, newBalance };
+  return Number(rows[0].balance);
 }
 
-function listTransactions(tenantId, customerId, limit = 50) {
-  return db.prepare(
-    `SELECT * FROM loyalty_ledger WHERE tenant_id = ? AND customer_id = ?
-     ORDER BY id DESC LIMIT ?`
-  ).all(tenantId, customerId, limit);
+async function addTransaction(tenantId, customerId, value, reason, source, actor, reference = null) {
+  const insert = await query(
+    `INSERT INTO loyalty_ledger (tenant_id, customer_id, value, reason, source, actor, reference)
+     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+    [tenantId, customerId, value, reason, source, actor, reference]
+  );
+  const newBalance = await getBalance(tenantId, customerId);
+  await query(`UPDATE customers SET points_balance = $1, updated_at = NOW() WHERE id = $2`, [newBalance, customerId]);
+  return { ledgerId: insert.rows[0].id, newBalance };
+}
+
+async function listTransactions(tenantId, customerId, limit = 50) {
+  const { rows } = await query(
+    `SELECT * FROM loyalty_ledger WHERE tenant_id = $1 AND customer_id = $2
+     ORDER BY id DESC LIMIT $3`,
+    [tenantId, customerId, limit]
+  );
+  return rows;
 }
 
 module.exports = { getBalance, addTransaction, listTransactions };

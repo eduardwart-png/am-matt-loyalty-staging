@@ -1,58 +1,54 @@
 // lib/scheduler.js — Campaign/Coupon Status-Übergänge, ohne Silent Failures (Direktive §40)
-const { db } = require('../db');
+const { query } = require('../db');
 
 const JOB_NAME = 'lifecycle_status_sync';
 
-function ensureJobRow() {
-  const row = db.prepare(`SELECT id FROM job_runs WHERE job_name = ?`).get(JOB_NAME);
-  if (!row) db.prepare(`INSERT INTO job_runs (job_name, status) VALUES (?, 'idle')`).run(JOB_NAME);
+async function ensureJobRow() {
+  const { rows } = await query(`SELECT id FROM job_runs WHERE job_name = $1`, [JOB_NAME]);
+  if (!rows[0]) await query(`INSERT INTO job_runs (job_name, status) VALUES ($1, 'idle')`, [JOB_NAME]);
 }
 
-function runLifecycleSync() {
-  ensureJobRow();
-  const now = new Date().toISOString();
-  db.prepare(`UPDATE job_runs SET last_run = ?, status = 'running' WHERE job_name = ?`).run(now, JOB_NAME);
+async function runLifecycleSync() {
+  await ensureJobRow();
+  await query(`UPDATE job_runs SET last_run = NOW(), status = 'running' WHERE job_name = $1`, [JOB_NAME]);
 
   try {
-    // Kampagnen: scheduled -> live, wenn start_at erreicht
-    db.prepare(`
-      UPDATE campaigns SET status = 'live', updated_at = datetime('now')
-      WHERE status = 'scheduled' AND start_at IS NOT NULL AND datetime(start_at) <= datetime('now')
-    `).run();
+    await query(`
+      UPDATE campaigns SET status = 'live', updated_at = NOW()
+      WHERE status = 'scheduled' AND start_at IS NOT NULL AND start_at <= NOW()
+    `);
 
-    // Kampagnen: live -> expired, wenn end_at überschritten
-    db.prepare(`
-      UPDATE campaigns SET status = 'expired', updated_at = datetime('now')
-      WHERE status = 'live' AND end_at IS NOT NULL AND datetime(end_at) < datetime('now')
-    `).run();
+    await query(`
+      UPDATE campaigns SET status = 'expired', updated_at = NOW()
+      WHERE status = 'live' AND end_at IS NOT NULL AND end_at < NOW()
+    `);
 
-    // Coupons: scheduled -> live
-    db.prepare(`
+    await query(`
       UPDATE coupons SET status = 'live'
-      WHERE status = 'scheduled' AND valid_from IS NOT NULL AND datetime(valid_from) <= datetime('now')
-    `).run();
+      WHERE status = 'scheduled' AND valid_from IS NOT NULL AND valid_from <= NOW()
+    `);
 
-    // Coupons: live -> expired
-    db.prepare(`
+    await query(`
       UPDATE coupons SET status = 'expired'
-      WHERE status = 'live' AND valid_until IS NOT NULL AND datetime(valid_until) < datetime('now')
-    `).run();
+      WHERE status = 'live' AND valid_until IS NOT NULL AND valid_until < NOW()
+    `);
 
-    db.prepare(`UPDATE job_runs SET last_success = ?, status = 'ok', retry_count = 0 WHERE job_name = ?`)
-      .run(new Date().toISOString(), JOB_NAME);
+    await query(`UPDATE job_runs SET last_success = NOW(), status = 'ok', retry_count = 0 WHERE job_name = $1`, [JOB_NAME]);
     return { ok: true };
   } catch (err) {
-    db.prepare(`
-      UPDATE job_runs SET last_failure = ?, last_error = ?, status = 'failed', retry_count = retry_count + 1
-      WHERE job_name = ?
-    `).run(new Date().toISOString(), String(err && err.message || err), JOB_NAME);
+    await query(`
+      UPDATE job_runs SET last_failure = NOW(), last_error = $1, status = 'failed', retry_count = retry_count + 1
+      WHERE job_name = $2
+    `, [String(err && err.message || err), JOB_NAME]);
     return { ok: false, error: err };
   }
 }
 
-function startScheduler(intervalMs = 60_000) {
-  runLifecycleSync(); // sofortiger erster Lauf
-  return setInterval(runLifecycleSync, intervalMs);
+function startScheduler(intervalMs = 30_000) {
+  runLifecycleSync().catch((err) => console.error('[scheduler] initial run failed:', err.message));
+  return setInterval(() => {
+    runLifecycleSync().catch((err) => console.error('[scheduler] run failed:', err.message));
+  }, intervalMs);
 }
 
 module.exports = { runLifecycleSync, startScheduler, JOB_NAME };

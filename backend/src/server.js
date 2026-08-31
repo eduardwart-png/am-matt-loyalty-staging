@@ -4,9 +4,6 @@ const express = require('express');
 const { migrate } = require('./db');
 const { startScheduler } = require('./lib/scheduler');
 
-migrate();
-startScheduler(30_000); // alle 30s Kampagnen/Coupon-Lifecycle prüfen
-
 const app = express();
 app.use(express.json());
 
@@ -23,7 +20,15 @@ app.use('/api/customer', require('./routes/customer'));
 app.use('/api/staff', require('./routes/staff'));
 app.use('/api/admin', require('./routes/admin'));
 
-app.get('/api/health', (req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
+app.get('/api/health', async (req, res) => {
+  try {
+    const { pool } = require('./db');
+    await pool.query('SELECT 1');
+    res.json({ ok: true, db: 'connected', ts: new Date().toISOString() });
+  } catch (err) {
+    res.status(503).json({ ok: false, db: 'disconnected', error: err.message, ts: new Date().toISOString() });
+  }
+});
 
 // Statisches Frontend (Mobile Browser App, Staff Mode, Operations Studio)
 const FRONTEND_DIR = path.join(__dirname, '..', '..', 'frontend');
@@ -33,9 +38,29 @@ app.get('/staff', (req, res) => res.sendFile(path.join(FRONTEND_DIR, 'staff', 'i
 app.get('/admin', (req, res) => res.sendFile(path.join(FRONTEND_DIR, 'admin', 'index.html')));
 app.get('/', (req, res) => res.sendFile(path.join(FRONTEND_DIR, 'customer', 'index.html')));
 
-const PORT = process.env.PORT || 4100;
-app.listen(PORT, () => {
-  console.log(`[am-matt-loyalty] Server läuft auf http://localhost:${PORT}`);
+// Zentrales Error-Handling, damit DB-/Async-Fehler nie silent bleiben (Direktive §40 sinngemäß auf API-Ebene)
+app.use((err, req, res, next) => {
+  console.error('[api-error]', req.method, req.originalUrl, '-', err.message);
+  if (res.headersSent) return next(err);
+  res.status(500).json({ error: 'internal_server_error' });
 });
+
+const PORT = process.env.PORT || 4100;
+
+async function start() {
+  try {
+    await migrate();
+    console.log('[am-matt-loyalty] DB-Migration erfolgreich.');
+  } catch (err) {
+    console.error('[am-matt-loyalty] DB-Migration fehlgeschlagen:', err.message);
+    process.exit(1);
+  }
+  startScheduler(30_000);
+  app.listen(PORT, () => {
+    console.log(`[am-matt-loyalty] Server läuft auf http://localhost:${PORT}`);
+  });
+}
+
+start();
 
 module.exports = app;

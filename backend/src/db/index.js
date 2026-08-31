@@ -1,17 +1,38 @@
-// db/index.js — zentrale DB-Verbindung (node:sqlite, kein Compile-Step nötig)
+// db/index.js — zentrale DB-Verbindung (PostgreSQL via pg, Railway-Staging-fähig)
+// Grund für Wechsel von node:sqlite: Railways Dateisystem ist nicht persistent über
+// Deploys/Neustarts hinweg — eine SQLite-Datei würde bei jedem Deploy verloren gehen.
 const path = require('node:path');
 const fs = require('node:fs');
-const { DatabaseSync } = require('node:sqlite');
+const { Pool } = require('pg');
 
-const DB_PATH = process.env.LOYALTY_DB_PATH || path.join(__dirname, '..', '..', 'data', 'loyalty.db');
-fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
-
-const db = new DatabaseSync(DB_PATH);
-db.exec('PRAGMA foreign_keys = ON;');
-
-function migrate() {
-  const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
-  db.exec(schema);
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error(
+    'DATABASE_URL fehlt. Lokal: eigene Postgres-Instanz starten und DATABASE_URL setzen. ' +
+    'Auf Railway: Postgres-Plugin mit dem Service verlinken (setzt DATABASE_URL automatisch).'
+  );
 }
 
-module.exports = { db, migrate, DB_PATH };
+// Railway-Postgres benötigt i.d.R. SSL ohne strikte Zertifikatsprüfung; lokal (localhost) nicht.
+const useSsl = !/localhost|127\.0\.0\.1/.test(connectionString);
+
+const pool = new Pool({
+  connectionString,
+  ssl: useSsl ? { rejectUnauthorized: false } : false,
+  max: 10,
+});
+
+pool.on('error', (err) => {
+  console.error('[db] Unerwarteter Fehler im Postgres-Pool:', err.message);
+});
+
+function query(text, params = []) {
+  return pool.query(text, params);
+}
+
+async function migrate() {
+  const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
+  await pool.query(schema);
+}
+
+module.exports = { pool, query, migrate };

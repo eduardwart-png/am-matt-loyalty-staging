@@ -1,52 +1,37 @@
 // db/seed.js — Seed für TENANT_001 (Restaurant Am-Matt) mit verifizierten Realdaten + klar markierten Demo-Daten.
-const { db, migrate } = require('./index');
+// Idempotent (ON CONFLICT DO NOTHING / Existenz-Checks) — sicher mehrfach ausführbar (z.B. bei jedem Deploy).
+const { query, migrate, pool } = require('./index');
 const { hashPassword, randomToken } = require('../lib/crypto');
 
-migrate();
-
-function upsertTenant() {
-  const exists = db.prepare(`SELECT id FROM tenants WHERE id = 'TENANT_001'`).get();
-  if (exists) return;
-  db.prepare(`
+async function upsertTenant() {
+  const { rows } = await query(`SELECT id FROM tenants WHERE id = 'TENANT_001'`);
+  if (rows[0]) return;
+  await query(`
     INSERT INTO tenants (id, name, slug, address_street, address_zip, address_city, phone, email,
       brand_primary_color, brand_accent_color)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    'TENANT_001', 'Restaurant Am-Matt', 'am-matt',
-    'Markt 12', '42477', 'Radevormwald',
-    '+49 2195 677099', 'am-matt@vodafone.de',
-    '#1B4D3E', '#C9A24B'
-  );
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+  `, ['TENANT_001', 'Restaurant Am-Matt', 'am-matt', 'Markt 12', '42477', 'Radevormwald',
+      '+49 2195 677099', 'am-matt@vodafone.de', '#1B4D3E', '#C9A24B']);
   console.log('Tenant TENANT_001 (Restaurant Am-Matt) angelegt.');
 }
 
-// Öffnungszeiten — real verifiziert von am-matt.com (Stand 31.08.2026), zentral, einmalig.
-function seedOpeningHours() {
-  const count = db.prepare(`SELECT COUNT(*) as n FROM opening_hours WHERE tenant_id = 'TENANT_001'`).get().n;
-  if (count > 0) return;
-  const insert = db.prepare(`
-    INSERT INTO opening_hours (tenant_id, weekday, is_closed, open_time, close_time, slot_order)
-    VALUES ('TENANT_001', ?, ?, ?, ?, ?)
-  `);
-  // weekday: 0=Sonntag..6=Samstag
-  for (let wd = 1; wd <= 6; wd++) { // Montag(1) bis Samstag(6)
-    insert.run(wd, 0, '11:30', '14:30', 0);
-    insert.run(wd, 0, '17:00', '22:30', 1);
+async function seedOpeningHours() {
+  const { rows } = await query(`SELECT COUNT(*) as n FROM opening_hours WHERE tenant_id = 'TENANT_001'`);
+  if (Number(rows[0].n) > 0) return;
+  for (let wd = 1; wd <= 6; wd++) {
+    await query(`INSERT INTO opening_hours (tenant_id, weekday, is_closed, open_time, close_time, slot_order)
+      VALUES ('TENANT_001', $1, 0, '11:30', '14:30', 0)`, [wd]);
+    await query(`INSERT INTO opening_hours (tenant_id, weekday, is_closed, open_time, close_time, slot_order)
+      VALUES ('TENANT_001', $1, 0, '17:00', '22:30', 1)`, [wd]);
   }
-  insert.run(0, 1, null, null, 0); // Sonntag Ruhetag
+  await query(`INSERT INTO opening_hours (tenant_id, weekday, is_closed, open_time, close_time, slot_order)
+    VALUES ('TENANT_001', 0, 1, NULL, NULL, 0)`);
   console.log('Öffnungszeiten geseedet.');
 }
 
-// Speisekarte — real verifiziert (siehe audit/menue-scan-live.md), nichts erfunden.
-function seedMenu() {
-  const count = db.prepare(`SELECT COUNT(*) as n FROM menu_categories WHERE tenant_id = 'TENANT_001'`).get().n;
-  if (count > 0) return;
-
-  const catInsert = db.prepare(`INSERT INTO menu_categories (tenant_id, name, sort_order) VALUES ('TENANT_001', ?, ?)`);
-  const itemInsert = db.prepare(`
-    INSERT INTO menu_items (tenant_id, category_id, name, description, price, vegetarian, seasonal, source, last_verified, sort_order, status)
-    VALUES ('TENANT_001', ?, ?, ?, ?, ?, ?, 'am-matt.com/menue Live-Scan', '2026-08-31', ?, 'verified')
-  `);
+async function seedMenu() {
+  const { rows } = await query(`SELECT COUNT(*) as n FROM menu_categories WHERE tenant_id = 'TENANT_001'`);
+  if (Number(rows[0].n) > 0) return;
 
   const categories = [
     { name: 'Vorspeisen', items: [
@@ -116,92 +101,93 @@ function seedMenu() {
     ]},
   ];
 
-  categories.forEach((cat, catIdx) => {
-    const catInfo = catInsert.run(cat.name, catIdx);
-    cat.items.forEach((item, itemIdx) => {
-      const [name, description, price, vegetarian] = item;
-      itemInsert.run(catInfo.lastInsertRowid, name, description, price, vegetarian, 0, itemIdx);
-    });
-  });
+  for (let catIdx = 0; catIdx < categories.length; catIdx++) {
+    const cat = categories[catIdx];
+    const catInsert = await query(`INSERT INTO menu_categories (tenant_id, name, sort_order) VALUES ('TENANT_001', $1, $2) RETURNING id`, [cat.name, catIdx]);
+    const catId = catInsert.rows[0].id;
+    for (let itemIdx = 0; itemIdx < cat.items.length; itemIdx++) {
+      const [name, description, price, vegetarian] = cat.items[itemIdx];
+      await query(`
+        INSERT INTO menu_items (tenant_id, category_id, name, description, price, vegetarian, seasonal, source, last_verified, sort_order, status)
+        VALUES ('TENANT_001', $1, $2, $3, $4, $5, 0, 'am-matt.com/menue Live-Scan', '2026-08-31', $6, 'verified')
+      `, [catId, name, description, price, vegetarian, itemIdx]);
+    }
+  }
   console.log('Speisekarte geseedet (real verifizierte Daten).');
 }
 
-// Demo-Kunde + Demo-Loyalty-Daten (klar als Demo gekennzeichnet, Direktive §14)
-function seedDemoCustomer() {
-  const exists = db.prepare(`SELECT id FROM customers WHERE tenant_id = 'TENANT_001' AND email = 'demo@am-matt.example'`).get();
-  if (exists) return;
+async function seedDemoCustomer() {
+  const { rows } = await query(`SELECT id FROM customers WHERE tenant_id = 'TENANT_001' AND email = 'demo@am-matt.example'`);
+  if (rows[0]) return;
   const { hash, salt } = hashPassword('demo1234');
   const qrToken = randomToken(16);
-  const info = db.prepare(`
+  const insert = await query(`
     INSERT INTO customers (tenant_id, email, display_name, password_hash, password_salt, birthday, qr_code_token, points_balance)
-    VALUES ('TENANT_001', 'demo@am-matt.example', 'Demo Kunde', ?, ?, '1990-05-15', ?, 0)
-  `).run(hash, salt, qrToken);
-
-  const customerId = info.lastInsertRowid;
-  const ledgerInsert = db.prepare(`
+    VALUES ('TENANT_001', 'demo@am-matt.example', 'Demo Kunde', $1, $2, '1990-05-15', $3, 0) RETURNING id
+  `, [hash, salt, qrToken]);
+  const customerId = insert.rows[0].id;
+  await query(`
     INSERT INTO loyalty_ledger (tenant_id, customer_id, value, reason, source, actor)
-    VALUES ('TENANT_001', ?, ?, ?, 'system', 'seed_demo_data')
-  `);
-  // DEMO LOYALTY DATA — kein reales Angebot, nur zur Veranschaulichung der UI (Direktive §14)
-  ledgerInsert.run(customerId, 540, 'demo_seed_purchase_history');
-  db.prepare(`UPDATE customers SET points_balance = 540 WHERE id = ?`).run(customerId);
+    VALUES ('TENANT_001', $1, 540, 'demo_seed_purchase_history', 'system', 'seed_script')
+  `, [customerId]);
+  await query(`UPDATE customers SET points_balance = 540 WHERE id = $1`, [customerId]);
   console.log('Demo-Kunde mit 540 Demo-Punkten angelegt (DEMO LOYALTY DATA, kein reales Angebot).');
 }
 
-function seedDemoReward() {
-  const count = db.prepare(`SELECT COUNT(*) as n FROM rewards WHERE tenant_id = 'TENANT_001'`).get().n;
-  if (count > 0) return;
-  db.prepare(`
+async function seedDemoReward() {
+  const { rows } = await query(`SELECT COUNT(*) as n FROM rewards WHERE tenant_id = 'TENANT_001'`);
+  if (Number(rows[0].n) > 0) return;
+  await query(`
     INSERT INTO rewards (tenant_id, title, description, points_cost, active)
-    VALUES ('TENANT_001', ?, ?, ?, 1)
-  `).run('Gratis Dessert', 'Ein Dessert nach Wahl gratis (DEMO LOYALTY DATA)', 600);
+    VALUES ('TENANT_001', 'Gratis Dessert', 'Ein Dessert nach Wahl gratis (DEMO LOYALTY DATA)', 600, 1)
+  `);
   console.log('Demo-Prämie angelegt (600 Punkte).');
 }
 
-function seedStaffAndAdmin() {
-  const staffExists = db.prepare(`SELECT id FROM staff_users WHERE tenant_id = 'TENANT_001' AND username = 'personal'`).get();
-  if (!staffExists) {
+async function seedStaffAndAdmin() {
+  const staffRes = await query(`SELECT id FROM staff_users WHERE tenant_id = 'TENANT_001' AND username = 'personal'`);
+  if (!staffRes.rows[0]) {
     const { hash, salt } = hashPassword('personal1234');
-    db.prepare(`INSERT INTO staff_users (tenant_id, username, password_hash, password_salt, role) VALUES ('TENANT_001', 'personal', ?, ?, 'staff')`)
-      .run(hash, salt);
+    await query(`INSERT INTO staff_users (tenant_id, username, password_hash, password_salt, role) VALUES ('TENANT_001', 'personal', $1, $2, 'staff')`, [hash, salt]);
     console.log('Staff-Login angelegt: personal / personal1234 (Demo — vor Production ändern!)');
   }
-  const adminExists = db.prepare(`SELECT id FROM staff_users WHERE tenant_id = 'TENANT_001' AND username = 'admin'`).get();
-  if (!adminExists) {
+  const adminRes = await query(`SELECT id FROM staff_users WHERE tenant_id = 'TENANT_001' AND username = 'admin'`);
+  if (!adminRes.rows[0]) {
     const { hash, salt } = hashPassword('admin1234');
-    db.prepare(`INSERT INTO staff_users (tenant_id, username, password_hash, password_salt, role) VALUES ('TENANT_001', 'admin', ?, ?, 'admin')`)
-      .run(hash, salt);
+    await query(`INSERT INTO staff_users (tenant_id, username, password_hash, password_salt, role) VALUES ('TENANT_001', 'admin', $1, $2, 'admin')`, [hash, salt]);
     console.log('Admin-Login angelegt: admin / admin1234 (Demo — vor Production ändern!)');
   }
 }
 
-// Demo-Kampagne (klar als Demo-Beispiel, orientiert an realem Mittagsangebot)
-function seedDemoCampaign() {
-  const count = db.prepare(`SELECT COUNT(*) as n FROM campaigns WHERE tenant_id = 'TENANT_001'`).get().n;
-  if (count > 0) return;
+async function seedDemoCampaign() {
+  const { rows } = await query(`SELECT COUNT(*) as n FROM campaigns WHERE tenant_id = 'TENANT_001'`);
+  if (Number(rows[0].n) > 0) return;
   const now = new Date();
-  const in30days = new Date(now.getTime() + 30 * 24 * 3600 * 1000).toISOString();
-  db.prepare(`
+  const in30days = new Date(now.getTime() + 30 * 24 * 3600 * 1000);
+  await query(`
     INSERT INTO campaigns (tenant_id, title, description, campaign_type, target_segment, start_at, end_at,
       points_bonus, visibility, status, created_by)
-    VALUES ('TENANT_001', ?, ?, 'weekly', 'all', ?, ?, ?, 'app', 'live', 'seed_script')
-  `).run(
-    'Mittagsangebot der Woche',
-    'Aktuelle Mittagsangebote — Preise und Gerichte laut Website, real verifiziert (Stand 31.08.2026).',
-    now.toISOString(), in30days, 0
-  );
+    VALUES ('TENANT_001', $1, $2, 'weekly', 'all', $3, $4, 0, 'app', 'live', 'seed_script')
+  `, ['Mittagsangebot der Woche',
+      'Aktuelle Mittagsangebote — Preise und Gerichte laut Website, real verifiziert (Stand 31.08.2026).',
+      now, in30days]);
   console.log('Demo-Kampagne "Mittagsangebot der Woche" angelegt (live, 30 Tage).');
 }
 
-upsertTenant();
-seedOpeningHours();
-seedMenu();
-seedDemoCustomer();
-seedDemoReward();
-seedStaffAndAdmin();
-seedDemoCampaign();
+async function main() {
+  await migrate();
+  await upsertTenant();
+  await seedOpeningHours();
+  await seedMenu();
+  await seedDemoCustomer();
+  await seedDemoReward();
+  await seedStaffAndAdmin();
+  await seedDemoCampaign();
+  console.log('\n--- SEED ABGESCHLOSSEN ---');
+  console.log('Demo-Kunde: demo@am-matt.example / demo1234');
+  console.log('Staff: personal / personal1234');
+  console.log('Admin: admin / admin1234');
+  await pool.end();
+}
 
-console.log('\n--- SEED ABGESCHLOSSEN ---');
-console.log('Demo-Kunde: demo@am-matt.example / demo1234');
-console.log('Staff: personal / personal1234');
-console.log('Admin: admin / admin1234');
+main().catch((err) => { console.error('SEED FEHLGESCHLAGEN:', err); process.exit(1); });

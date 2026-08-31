@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: am-matt-loyalty-staging
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: master
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: staging
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: am-matt-loyalty-db
+          property: connectionString
+
+databases:
+  - name: am-matt-loyalty-db
+    plan: free
+    region: frankfurt
+    databaseName: am_matt_staging
+    user: am_matt_staging_user

@@ -4,7 +4,7 @@
   "description": "White-Label Gastro Loyalty Platform — Pilot Tenant: Restaurant Am-Matt",
   "main": "backend/src/server.js",
   "type": "commonjs",
-  "engines": { "node": ">=22.5.0" },
+  "engines": { "node": ">=20.0.0" },
   "scripts": {
     "start": "node backend/src/server.js",
     "dev": "node backend/src/server.js",
@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "express": "^4.21.0",
+    "pg": "^8.13.1",
     "qrcode": "^1.5.4"
   }
 }

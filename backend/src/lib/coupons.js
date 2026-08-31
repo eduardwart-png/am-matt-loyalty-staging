@@ -1,5 +1,5 @@
 // lib/coupons.js — Coupon Engine: Regelprüfung + Doppeleinlösung-Schutz
-const { db } = require('../db');
+const { query, pool } = require('../db');
 
 function isCouponCurrentlyValid(coupon) {
   const now = new Date();
@@ -19,39 +19,78 @@ function isCouponCurrentlyValid(coupon) {
   return { ok: true };
 }
 
-function canRedeem(tenantId, couponId, customerId) {
-  const coupon = db.prepare(`SELECT * FROM coupons WHERE id = ? AND tenant_id = ?`).get(couponId, tenantId);
+async function canRedeem(tenantId, couponId, customerId) {
+  const { rows } = await query(`SELECT * FROM coupons WHERE id = $1 AND tenant_id = $2`, [couponId, tenantId]);
+  const coupon = rows[0];
   if (!coupon) return { ok: false, reason: 'not_found' };
 
   const validity = isCouponCurrentlyValid(coupon);
   if (!validity.ok) return validity;
 
-  const usedByCustomer = db.prepare(
-    `SELECT COUNT(*) as n FROM coupon_redemptions WHERE coupon_id = ? AND customer_id = ?`
-  ).get(couponId, customerId).n;
+  const usedRes = await query(
+    `SELECT COUNT(*) as n FROM coupon_redemptions WHERE coupon_id = $1 AND customer_id = $2`,
+    [couponId, customerId]
+  );
+  const usedByCustomer = Number(usedRes.rows[0].n);
   const maxPerCustomer = coupon.max_uses_per_customer ?? 1;
   if (usedByCustomer >= maxPerCustomer) {
     return { ok: false, reason: 'already_redeemed', coupon }; // DOPPELEINLÖSUNG BLOCKIERT
   }
 
   if (coupon.max_uses_total != null) {
-    const totalUsed = db.prepare(`SELECT COUNT(*) as n FROM coupon_redemptions WHERE coupon_id = ?`).get(couponId).n;
-    if (totalUsed >= coupon.max_uses_total) return { ok: false, reason: 'limit_reached', coupon };
+    const totalRes = await query(`SELECT COUNT(*) as n FROM coupon_redemptions WHERE coupon_id = $1`, [couponId]);
+    if (Number(totalRes.rows[0].n) >= coupon.max_uses_total) return { ok: false, reason: 'limit_reached', coupon };
   }
 
   return { ok: true, coupon };
 }
 
-function redeem(tenantId, couponId, customerId, staffUsername) {
-  const check = canRedeem(tenantId, couponId, customerId);
-  if (!check.ok) return check;
+// Race-Condition-Schutz bei Doppeleinlösung: Transaktion mit Row-Lock statt reinem Read-then-Write.
+async function redeem(tenantId, couponId, customerId, staffUsername) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const couponRes = await client.query(
+      `SELECT * FROM coupons WHERE id = $1 AND tenant_id = $2 FOR UPDATE`,
+      [couponId, tenantId]
+    );
+    const coupon = couponRes.rows[0];
+    if (!coupon) { await client.query('ROLLBACK'); return { ok: false, reason: 'not_found' }; }
 
-  const info = db.prepare(
-    `INSERT INTO coupon_redemptions (tenant_id, coupon_id, customer_id, redeemed_by_staff)
-     VALUES (?, ?, ?, ?)`
-  ).run(tenantId, couponId, customerId, staffUsername);
+    const validity = isCouponCurrentlyValid(coupon);
+    if (!validity.ok) { await client.query('ROLLBACK'); return validity; }
 
-  return { ok: true, redemptionId: info.lastInsertRowid, coupon: check.coupon };
+    const usedRes = await client.query(
+      `SELECT COUNT(*) as n FROM coupon_redemptions WHERE coupon_id = $1 AND customer_id = $2`,
+      [couponId, customerId]
+    );
+    const maxPerCustomer = coupon.max_uses_per_customer ?? 1;
+    if (Number(usedRes.rows[0].n) >= maxPerCustomer) {
+      await client.query('ROLLBACK');
+      return { ok: false, reason: 'already_redeemed', coupon }; // DOPPELEINLÖSUNG BLOCKIERT
+    }
+
+    if (coupon.max_uses_total != null) {
+      const totalRes = await client.query(`SELECT COUNT(*) as n FROM coupon_redemptions WHERE coupon_id = $1`, [couponId]);
+      if (Number(totalRes.rows[0].n) >= coupon.max_uses_total) {
+        await client.query('ROLLBACK');
+        return { ok: false, reason: 'limit_reached', coupon };
+      }
+    }
+
+    const insertRes = await client.query(
+      `INSERT INTO coupon_redemptions (tenant_id, coupon_id, customer_id, redeemed_by_staff)
+       VALUES ($1, $2, $3, $4) RETURNING id`,
+      [tenantId, couponId, customerId, staffUsername]
+    );
+    await client.query('COMMIT');
+    return { ok: true, redemptionId: insertRes.rows[0].id, coupon };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 module.exports = { isCouponCurrentlyValid, canRedeem, redeem };
