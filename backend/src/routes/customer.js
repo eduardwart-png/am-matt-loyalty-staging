@@ -126,34 +126,6 @@ router.get('/opening-hours', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// --- Öffentliche Vorschau (kein Login nötig, zeigt echte Demo-Kundendaten schreibgeschützt) ---
-router.get('/preview', async (req, res, next) => {
-  try {
-    const { rows: custRows } = await query(
-      `SELECT id, email, display_name, points_balance, qr_code_token FROM customers WHERE tenant_id = $1 ORDER BY id ASC LIMIT 1`,
-      [req.tenant.id]
-    );
-    const customer = custRows[0];
-    if (!customer) return res.status(404).json({ error: 'no_demo_customer' });
-
-    const balance = await getBalance(req.tenant.id, customer.id);
-    const transactions = await listTransactions(req.tenant.id, customer.id, 10);
-    const { rows: rewards } = await query(`SELECT * FROM rewards WHERE tenant_id = $1 AND active = 1 ORDER BY points_cost ASC`, [req.tenant.id]);
-    const { rows: couponRows } = await query(`SELECT * FROM coupons WHERE tenant_id = $1 AND status = 'live'`, [req.tenant.id]);
-    const coupons = couponRows.filter(c => isCouponCurrentlyValid(c).ok);
-    const { rows: campaigns } = await query(
-      `SELECT * FROM campaigns WHERE tenant_id = $1 AND status = 'live' AND visibility IN ('app','both') ORDER BY start_at DESC`,
-      [req.tenant.id]
-    );
-
-    res.json({
-      isPreview: true,
-      customer: { display_name: customer.display_name, email: customer.email, points_balance: balance, qr_code_token: customer.qr_code_token },
-      rewards, coupons, campaigns, transactions,
-    });
-  } catch (err) { next(err); }
-});
-
 // --- Tenant-Branding/Info (für Frontend-Theming) ---
 router.get('/tenant-info', (req, res) => {
   const { id, name, address_street, address_zip, address_city, phone, email,
