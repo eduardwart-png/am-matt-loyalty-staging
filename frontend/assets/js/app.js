@@ -362,7 +362,17 @@ async function loadMenu() {
       const catId = current.id.replace('menu-cat-', '');
       tabs.querySelectorAll('.menu-chip').forEach(c => c.classList.toggle('active', c.dataset.cat === catId));
       const activeChip = tabs.querySelector('.menu-chip.active');
-      if (activeChip) activeChip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      if (activeChip) {
+        // Nur horizontal scrollen (scrollIntoView zieht in manchen Browsern auch das Fenster vertikal mit,
+        // was den gerade ausgefuehrten Kategorie-Sprung sofort wieder zurueckreisst — Bug-Root-Cause).
+        const chipLeft = activeChip.offsetLeft;
+        const chipRight = chipLeft + activeChip.offsetWidth;
+        const visibleLeft = tabs.scrollLeft;
+        const visibleRight = visibleLeft + tabs.clientWidth;
+        if (chipLeft < visibleLeft || chipRight > visibleRight) {
+          tabs.scrollTo({ left: chipLeft - tabs.clientWidth / 2 + activeChip.offsetWidth / 2, behavior: 'smooth' });
+        }
+      }
     }
     menuScrollSpyFn = () => {
       if (!document.getElementById('view-menu').classList.contains('active')) return;
