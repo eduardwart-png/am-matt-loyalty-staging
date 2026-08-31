@@ -176,3 +176,15 @@ CREATE INDEX IF NOT EXISTS idx_ledger_customer ON loyalty_ledger(tenant_id, cust
 CREATE INDEX IF NOT EXISTS idx_campaigns_status ON campaigns(tenant_id, status);
 CREATE INDEX IF NOT EXISTS idx_coupons_status ON coupons(tenant_id, status);
 CREATE INDEX IF NOT EXISTS idx_menu_items_category ON menu_items(category_id);
+
+-- Sessions DB-gestuetzt (nicht nur In-Memory) — ueberlebt Render-Free-Tier-Neustarts/Cold-Starts,
+-- sonst wird bei jedem Neustart/Deploy jeder eingeloggte Kunde/Staff/Admin ausgeloggt (Eddy: "vollkommen funktional").
+CREATE TABLE IF NOT EXISTS sessions (
+  token TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL,
+  subject_type TEXT NOT NULL,
+  subject_id INTEGER NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  expires_at TIMESTAMPTZ NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);

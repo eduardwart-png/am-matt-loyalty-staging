@@ -33,6 +33,9 @@ async function runLifecycleSync() {
       WHERE status = 'live' AND valid_until IS NOT NULL AND valid_until < NOW()
     `);
 
+    // Abgelaufene Sessions aufraeumen — verhindert unbegrenztes Tabellenwachstum (Free-Tier-DB-Limit).
+    await query(`DELETE FROM sessions WHERE expires_at < NOW()`);
+
     await query(`UPDATE job_runs SET last_success = NOW(), status = 'ok', retry_count = 0 WHERE job_name = $1`, [JOB_NAME]);
     return { ok: true };
   } catch (err) {
