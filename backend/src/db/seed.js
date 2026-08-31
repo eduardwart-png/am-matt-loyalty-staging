@@ -30,9 +30,6 @@ async function seedOpeningHours() {
 }
 
 async function seedMenu() {
-  const { rows } = await query(`SELECT COUNT(*) as n FROM menu_categories WHERE tenant_id = 'TENANT_001'`);
-  if (Number(rows[0].n) > 0) return;
-
   const dishImages = {
     'Rumpsteak „Madagaskar\"': '/assets/img/dish-rumpsteak.jpg',
     'Zwiebel-Rumpsteak': '/assets/img/dish-rumpsteak.jpg',
@@ -41,6 +38,15 @@ async function seedMenu() {
     'Gambas': '/assets/img/dish-gambas.jpg',
     'Baklava': '/assets/img/dish-baklava.jpg',
   };
+
+  const { rows } = await query(`SELECT COUNT(*) as n FROM menu_categories WHERE tenant_id = 'TENANT_001'`);
+  if (Number(rows[0].n) > 0) {
+    // Bereits geseedet in früherem Deploy — nur fehlende Bilder nachziehen (additiv, kein Datenverlust).
+    for (const [name, url] of Object.entries(dishImages)) {
+      await query(`UPDATE menu_items SET image_url = $1 WHERE tenant_id = 'TENANT_001' AND name = $2 AND image_url IS NULL`, [url, name]);
+    }
+    return;
+  }
 
   const categories = [
     { name: 'Vorspeisen', items: [
@@ -128,7 +134,10 @@ async function seedMenu() {
 
 async function seedDemoCustomer() {
   const { rows } = await query(`SELECT id FROM customers WHERE tenant_id = 'TENANT_001' AND email = 'demo@am-matt.example'`);
-  if (rows[0]) return;
+  if (rows[0]) {
+    await query(`UPDATE customers SET display_name = 'Anna Schmitz' WHERE id = $1 AND display_name = 'Demo Kunde'`, [rows[0].id]);
+    return;
+  }
   const { hash, salt } = hashPassword('demo1234');
   const qrToken = randomToken(16);
   const insert = await query(`
@@ -146,7 +155,10 @@ async function seedDemoCustomer() {
 
 async function seedDemoReward() {
   const { rows } = await query(`SELECT COUNT(*) as n FROM rewards WHERE tenant_id = 'TENANT_001'`);
-  if (Number(rows[0].n) > 0) return;
+  if (Number(rows[0].n) > 0) {
+    // Staging-Config, kein Kundendatensatz — sicher ersetzbar bei Redesign/Content-Update.
+    await query(`DELETE FROM rewards WHERE tenant_id = 'TENANT_001'`);
+  }
   await query(`
     INSERT INTO rewards (tenant_id, title, description, points_cost, active, image_url)
     VALUES ('TENANT_001', 'Espresso oder Kaffee', 'Ein Heißgetränk nach Wahl auf uns.', 50, 1, '/assets/img/reward-espresso.jpg')
@@ -194,7 +206,9 @@ async function seedDemoCoupon() {
 
 async function seedDemoCampaign() {
   const { rows } = await query(`SELECT COUNT(*) as n FROM campaigns WHERE tenant_id = 'TENANT_001'`);
-  if (Number(rows[0].n) > 0) return;
+  if (Number(rows[0].n) > 0) {
+    await query(`DELETE FROM campaigns WHERE tenant_id = 'TENANT_001'`);
+  }
   const now = new Date();
   const in30days = new Date(now.getTime() + 30 * 24 * 3600 * 1000);
   await query(`
