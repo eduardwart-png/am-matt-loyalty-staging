@@ -174,7 +174,7 @@ async function seedDemoCampaign() {
   console.log('Demo-Kampagne "Mittagsangebot der Woche" angelegt (live, 30 Tage).');
 }
 
-async function main() {
+async function main(closePool = true) {
   await migrate();
   await upsertTenant();
   await seedOpeningHours();
@@ -187,7 +187,14 @@ async function main() {
   console.log('Demo-Kunde: demo@am-matt.example / demo1234');
   console.log('Staff: personal / personal1234');
   console.log('Admin: admin / admin1234');
-  await pool.end();
+  if (closePool) await pool.end();
 }
 
-main().catch((err) => { console.error('SEED FEHLGESCHLAGEN:', err); process.exit(1); });
+// Direktaufruf (node db/seed.js): läuft standalone und beendet den Pool danach.
+// Als Modul importiert (require('./db/seed')): main() wird vom Aufrufer gesteuert,
+// Pool bleibt offen (der Server braucht ihn weiter für Requests).
+if (require.main === module) {
+  main(true).catch((err) => { console.error('SEED FEHLGESCHLAGEN:', err); process.exit(1); });
+}
+
+module.exports = { main };

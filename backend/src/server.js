@@ -3,6 +3,7 @@ const path = require('node:path');
 const express = require('express');
 const { migrate } = require('./db');
 const { startScheduler } = require('./lib/scheduler');
+const seed = require('./db/seed');
 
 const app = express();
 app.use(express.json());
@@ -51,8 +52,10 @@ async function start() {
   try {
     await migrate();
     console.log('[am-matt-loyalty] DB-Migration erfolgreich.');
+    await seed.main(false); // Pool offen lassen — Server braucht ihn weiter
+    console.log('[am-matt-loyalty] Seed erfolgreich (idempotent).');
   } catch (err) {
-    console.error('[am-matt-loyalty] DB-Migration fehlgeschlagen:', err.message);
+    console.error('[am-matt-loyalty] DB-Migration/Seed fehlgeschlagen:', err.message);
     process.exit(1);
   }
   startScheduler(30_000);
