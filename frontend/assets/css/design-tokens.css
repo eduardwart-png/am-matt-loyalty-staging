@@ -1,35 +1,39 @@
-/* design-tokens.css — Am-Matt Design System v3 (Flaggschiff)
-   Palette aus dem echten Fachwerkhaus-Material abgeleitet: dunkles Eichenholz (Balken),
-   weißer Kalkputz (Fassade), warmes Messing-/Laternenlicht (Abend) — NICHT generisches Gastro-Rot.
-   Typografie: Barlow Condensed (Headlines, große Zahlen, selbstbewusst) + Inter (Fließtext). */
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+/* design-tokens.css — Am-Matt Design System v4 (fixiertes Farbsystem, verbindlich)
+   Kein freies Farb-Interpretieren mehr: DARK/LIGHT/SURFACE/ACCENT/WOOD/DEEP exakt wie vorgegeben. */
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap');
 
 :root {
-  --am-matt-ink: #1B1712;          /* fast schwarz, warmer Unterton wie gealtertes Eichenholz */
-  --am-matt-ink-2: #2A2119;        /* etwas heller, für Verläufe/Cards */
-  --am-matt-brass: #C9A227;        /* Messing/Laternenlicht — Akzent, sparsam einsetzen */
-  --am-matt-brass-soft: #E8CE7A;
-  --am-matt-paper: #F7F2E6;        /* warmer Kalkputz-Creme — Haupt-Hintergrund */
-  --am-matt-paper-2: #EFE6D2;
-  --am-matt-surface: #FFFFFF;
-  --am-matt-text: #201A13;
-  --am-matt-text-muted: #6B6155;
-  --am-matt-border: #E4DAC4;
+  --am-matt-dark: #20211F;         /* warmes Graphit/Anthrazit */
+  --am-matt-light: #F4F0E8;        /* warmes Stein-/Elfenbein */
+  --am-matt-surface: #E8E0D4;      /* warmer Naturton */
+  --am-matt-accent: #B4864A;       /* zurückhaltendes Messing/Gold — sparsam! */
+  --am-matt-wood: #73543B;         /* warmer Holzton */
+  --am-matt-deep: #29322D;         /* sehr dunkles Waldgrün — nur punktuell */
+  --am-matt-surface-card: #FFFFFF;
+  --am-matt-text: #201F1B;
+  --am-matt-text-muted: #6B6459;
+  --am-matt-border: #DCD2BF;
   --am-matt-success: #3E6B4A;
   --am-matt-danger: #9C3B2E;
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
+  /* Legacy-Aliase für Staff/Admin-Tools (interne Backoffice-Screens, nicht Teil des Customer-Redesigns) */
+  --am-matt-primary: var(--am-matt-dark);
+  --am-matt-primary-dark: var(--am-matt-dark);
+  --am-matt-bg: var(--am-matt-light);
+  --am-matt-accent-legacy: var(--am-matt-accent);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
   --space-5: 24px;
   --space-6: 32px;
+  --space-7: 48px;
   --font-display: 'Barlow Condensed', Arial, sans-serif;
-  --font-body: 'Barlow', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --shadow-card: 0 4px 16px rgba(27, 23, 18, 0.10);
-  --shadow-elevated: 0 16px 40px rgba(27, 23, 18, 0.28);
+  --font-body: 'Barlow', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --shadow-card: 0 2px 10px rgba(32, 33, 31, 0.08);
+  --shadow-elevated: 0 10px 28px rgba(32, 33, 31, 0.22);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
 }
@@ -38,7 +42,7 @@
 html, body { margin: 0; padding: 0; }
 body {
   font-family: var(--font-body);
-  background: var(--am-matt-paper);
+  background: var(--am-matt-light);
   color: var(--am-matt-text);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
@@ -48,14 +52,13 @@ h1, h2, h3, .display {
   font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: -0.01em;
-  text-transform: uppercase;
 }
 a { color: inherit; text-decoration: none; }
-button { font-family: inherit; cursor: pointer; border: none; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
 img { max-width: 100%; display: block; }
 
 .card {
-  background: var(--am-matt-surface);
+  background: var(--am-matt-surface-card);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
   padding: var(--space-4);
@@ -67,30 +70,26 @@ img { max-width: 100%; display: block; }
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  padding: 15px 20px;
+  padding: 15px 22px;
   border-radius: var(--radius-sm);
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 14px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  transition: transform 0.18s ease, background 0.18s ease;
 }
 .btn:active { transform: scale(0.97); }
-.btn-primary { background: var(--am-matt-ink); color: var(--am-matt-paper); }
-.btn-primary:hover { background: var(--am-matt-ink-2); }
-.btn-accent { background: var(--am-matt-brass); color: var(--am-matt-ink); }
+.btn-primary { background: var(--am-matt-dark); color: var(--am-matt-light); }
+.btn-accent { background: var(--am-matt-accent); color: var(--am-matt-dark); }
 .btn-outline { background: transparent; border: 1.5px solid var(--am-matt-border); color: var(--am-matt-text); }
 .btn-full { width: 100%; }
-.btn[disabled] { background: #E4DCCC; color: #9C927F; cursor: not-allowed; }
+.btn[disabled] { background: #DCD5C6; color: #928A7A; cursor: not-allowed; }
 
-.pill { display: inline-block; padding: 4px 11px; border-radius: 3px; font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
-.pill-demo { background: var(--am-matt-brass-soft); color: #5C4A0D; }
+.pill { display: inline-block; padding: 4px 10px; border-radius: var(--radius-sm); font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 0.04em; }
 .pill-veg { background: #E1EBE3; color: var(--am-matt-success); }
-.pill-live { background: var(--am-matt-ink); color: var(--am-matt-paper); }
 
 .skeleton {
-  background: linear-gradient(90deg, #EFE6D2 25%, #F7F2E6 50%, #EFE6D2 75%);
+  background: linear-gradient(90deg, var(--am-matt-surface) 25%, var(--am-matt-light) 50%, var(--am-matt-surface) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
   border-radius: var(--radius-sm);
@@ -102,17 +101,18 @@ img { max-width: 100%; display: block; }
   bottom: calc(96px + var(--safe-bottom));
   left: 50%;
   transform: translateX(-50%) translateY(20px);
-  background: var(--am-matt-ink);
-  color: var(--am-matt-paper);
+  background: var(--am-matt-dark);
+  color: var(--am-matt-light);
   padding: 13px 22px;
   border-radius: var(--radius-sm);
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 600;
   box-shadow: var(--shadow-elevated);
   z-index: 1000;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.28s ease, transform 0.28s ease;
+  transition: opacity 0.24s ease, transform 0.24s ease;
   max-width: calc(100% - 32px);
   text-align: center;
 }

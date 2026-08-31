@@ -8,174 +8,193 @@
 <title>Am-Matt</title>
 <link rel="stylesheet" href="/assets/css/design-tokens.css">
 <style>
-  #app { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 90px; position: relative; }
+  #app { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 88px; position: relative; }
 
-  /* Duoton-Bildbehandlung: alle Fotos bekommen denselben warmen Farbstich —
-     macht unterschiedliche Bildquellen zu EINEM einheitlichen, hochwertigen Look. */
-  .photo { position: relative; overflow: hidden; background: var(--am-matt-ink); }
-  .photo img { width: 100%; height: 100%; object-fit: cover; filter: sepia(18%) saturate(1.12) brightness(0.97) contrast(1.05); }
-  .photo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(27,23,18,0) 40%, rgba(27,23,18,.5) 100%); pointer-events: none; }
-  .photo.no-vignette::after { display: none; }
+  /* Duoton-Bildbehandlung für einheitlichen Look über alle Fotoquellen */
+  .photo { position: relative; overflow: hidden; background: var(--am-matt-dark); }
+  .photo img { width: 100%; height: 100%; object-fit: cover; filter: sepia(10%) saturate(1.05) brightness(0.96); }
+  .photo.dim::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(32,33,31,0) 35%, rgba(32,33,31,.55) 100%); }
 
   /* Top bar */
   .topbar { position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; z-index: 90;
     display: flex; align-items: center; justify-content: space-between; padding: calc(14px + var(--safe-top)) var(--space-4) 14px; }
-  .topbar.solid { background: rgba(247,242,230,.94); backdrop-filter: blur(10px); border-bottom: 1px solid var(--am-matt-border); }
-  .topbar-brand { font-family: var(--font-display); font-weight: 800; font-size: 22px; letter-spacing: 0.02em; }
-  .topbar.on-hero .topbar-brand { color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,.4); }
-  .avatar-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--am-matt-ink); color: var(--am-matt-brass-soft);
-    display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 700; font-size: 15px; border: 1.5px solid rgba(255,255,255,.4); }
-  .login-chip { padding: 9px 18px; border-radius: 3px; background: var(--am-matt-brass); color: var(--am-matt-ink); font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+  .topbar.solid { background: rgba(244,240,232,.94); backdrop-filter: blur(10px); border-bottom: 1px solid var(--am-matt-border); }
+  .topbar-brand { font-family: var(--font-display); font-weight: 700; font-size: 21px; }
+  .topbar.on-hero .topbar-brand { color: #fff; text-shadow: 0 1px 8px rgba(0,0,0,.4); }
+  .avatar-btn { width: 34px; height: 34px; border-radius: 50%; background: var(--am-matt-dark); color: var(--am-matt-accent);
+    display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 700; font-size: 14px; }
+  .login-chip { padding: 9px 18px; border-radius: var(--radius-sm); background: rgba(255,255,255,.92); color: var(--am-matt-dark); font-family: var(--font-display); font-size: 13px; font-weight: 700; }
 
   .view { display: none; }
   .view.active { display: block; }
-  .section { padding: 0 var(--space-4); margin-top: var(--space-6); }
-  .section-title { font-family: var(--font-display); font-size: 26px; font-weight: 700; margin: 0 0 var(--space-3); letter-spacing: -0.01em; line-height: 0.95; }
-  .section-sub { color: var(--am-matt-text-muted); font-size: 13px; margin-top: -8px; margin-bottom: var(--space-3); font-family: var(--font-body); text-transform: none; }
 
-  /* HERO */
-  .hero { position: relative; min-height: 82vh; display: flex; align-items: flex-end; overflow: hidden; }
-  .hero-bg { position: absolute; inset: 0; }
-  .hero-bg img { width: 100%; height: 100%; object-fit: cover; filter: sepia(15%) saturate(1.15) brightness(0.85) contrast(1.08); }
-  .hero-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(27,23,18,.15) 0%, rgba(27,23,18,.5) 55%, rgba(20,16,11,.97) 100%); }
-  .hero-content { position: relative; z-index: 1; color: #FBF6E9; padding: var(--space-4) var(--space-4) var(--space-6); width: 100%; }
-  .hero-eyebrow { font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--am-matt-brass-soft); }
-  .hero-title { font-family: var(--font-display); font-size: 64px; font-weight: 800; line-height: 0.85; margin: 10px 0 0; letter-spacing: -0.01em; }
-  .hero-sub { font-family: var(--font-body); font-size: 15px; font-weight: 500; opacity: .92; margin-top: 10px; max-width: 30ch; text-transform: none; }
+  /* Editorial-Rhythmus: unterschiedliche Sections, kein Card-Grid-Wiederholmuster */
+  .section { padding: 0 var(--space-4); margin-top: var(--space-7); }
+  .section-label { font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--am-matt-wood); margin-bottom: 6px; }
+  .section-title { font-family: var(--font-display); font-size: 34px; font-weight: 700; line-height: 0.95; letter-spacing: -0.01em; }
+
+  /* BLOCK 1 — HERO, full-bleed, Text auf Bild */
+  .hero { position: relative; min-height: 84vh; display: flex; align-items: flex-end; overflow: hidden; }
+  .hero .photo { position: absolute; inset: 0; }
+  .hero .photo img { filter: sepia(8%) saturate(1.08) brightness(0.8); }
+  .hero .photo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(32,33,31,.1) 0%, rgba(32,33,31,.45) 55%, rgba(32,33,31,.98) 100%); }
+  .hero-content { position: relative; z-index: 1; color: var(--am-matt-light); padding: var(--space-4) var(--space-4) var(--space-6); width: 100%; }
+  .hero-kicker { font-family: var(--font-body); font-size: 12.5px; font-weight: 600; opacity: .85; letter-spacing: 0.02em; }
+  .hero-title { font-family: var(--font-display); font-size: 58px; font-weight: 700; line-height: 0.9; margin: 8px 0 0; }
+  .hero-sub { font-family: var(--font-display); font-size: 22px; font-weight: 600; color: var(--am-matt-accent); margin-top: 6px; }
   .hero-cta-row { display: flex; gap: 10px; margin-top: var(--space-5); }
-  .hero-cta-row .btn { flex: 1; padding: 15px 12px; }
-  .btn-hero-primary { background: var(--am-matt-brass); color: var(--am-matt-ink); }
-  .btn-hero-secondary { background: rgba(255,255,255,.1); border: 1.5px solid rgba(255,255,255,.55); color: #fff; }
+  .hero-cta-row .btn { flex: 1; }
+  .btn-hero-primary { background: var(--am-matt-accent); color: var(--am-matt-dark); }
+  .btn-hero-secondary { background: transparent; border: 1.5px solid rgba(255,255,255,.5); color: #fff; }
 
-  /* Loyalty card — dunkle Karte mit Messing-Ring-Dekoration wie eine Premium-Mitgliedskarte */
-  .loyalty-card { position: relative; overflow: hidden; background: linear-gradient(150deg, var(--am-matt-ink-2), var(--am-matt-ink)); color: #FBF6E9; border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-elevated); }
-  .loyalty-card::after { content: ''; position: absolute; right: -55px; top: -60px; width: 190px; height: 190px; border-radius: 50%; border: 26px solid rgba(201,162,39,.16); }
-  .loyalty-greeting { position: relative; z-index: 1; font-family: var(--font-display); font-size: 22px; font-weight: 700; text-transform: none; letter-spacing: 0; }
-  .points-value { position: relative; z-index: 1; font-family: var(--font-display); font-size: 68px; font-weight: 800; line-height: 0.85; margin-top: 10px; letter-spacing: -0.01em; }
-  .points-value small { font-size: 20px; opacity: 0.75; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
-  .progress-track { position: relative; z-index: 1; height: 6px; background: rgba(255,255,255,0.16); border-radius: 999px; margin-top: var(--space-4); overflow: hidden; }
-  .progress-fill { height: 100%; background: var(--am-matt-brass); border-radius: 999px; transition: width 0.6s ease; }
-  .progress-note { position: relative; z-index: 1; font-family: var(--font-body); font-size: 13px; opacity: 0.85; margin-top: var(--space-2); text-transform: none; }
-  .loyalty-cta { position: relative; z-index: 1; display: inline-block; margin-top: var(--space-4); padding: 9px 16px; border-radius: 3px; font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--am-matt-ink); background: var(--am-matt-brass); }
-  .loyalty-teaser-text { position: relative; z-index: 1; font-family: var(--font-body); font-size: 14.5px; line-height: 1.5; opacity: .9; text-transform: none; }
+  /* BLOCK 2 — persönlicher Status: Stammgastkarte, kein Bankkonto-Look */
+  .status-card { position: relative; overflow: hidden; background: var(--am-matt-dark); color: var(--am-matt-light); border-radius: var(--radius-lg); padding: var(--space-5); }
+  .status-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--am-matt-accent); }
+  .status-greeting { font-family: var(--font-display); font-size: 20px; font-weight: 600; }
+  .status-points-row { display: flex; align-items: baseline; gap: 10px; margin-top: var(--space-3); }
+  .status-points { font-family: var(--font-display); font-size: 60px; font-weight: 700; line-height: 0.85; }
+  .status-points-label { font-family: var(--font-body); font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; opacity: .7; }
+  .progress-track { height: 4px; background: rgba(255,255,255,0.15); border-radius: 999px; margin-top: var(--space-4); overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--am-matt-accent); border-radius: 999px; transition: width 0.5s ease; }
+  .progress-note { font-family: var(--font-body); font-size: 13px; opacity: 0.8; margin-top: var(--space-2); }
+  .status-cta { display: inline-block; margin-top: var(--space-4); font-family: var(--font-display); font-size: 13px; font-weight: 700; color: var(--am-matt-accent); border-bottom: 1.5px solid var(--am-matt-accent); padding-bottom: 2px; }
+  .status-teaser-text { font-family: var(--font-body); font-size: 14px; line-height: 1.5; opacity: .85; margin-top: 8px; }
 
-  /* Feature cards (Kampagne/Saison) — großes Editorial-Bild, Text darunter */
-  .feature-card { position: relative; border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-card); background: var(--am-matt-surface); border: 1px solid var(--am-matt-border); margin-bottom: var(--space-4); }
-  .feature-card .photo { height: 200px; }
-  .feature-body { padding: var(--space-4) var(--space-4) var(--space-5); }
-  .feature-eyebrow { font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--am-matt-brass); }
-  .feature-title { font-family: var(--font-display); font-size: 26px; font-weight: 700; margin: 4px 0 0; line-height: 0.95; }
-  .feature-desc { font-family: var(--font-body); font-size: 13.5px; color: var(--am-matt-text-muted); margin-top: 8px; line-height: 1.5; text-transform: none; }
-  .feature-meta { display: flex; justify-content: space-between; align-items: center; margin-top: var(--space-3); }
-  .feature-meta .tag { font-family: var(--font-display); font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--am-matt-text-muted); }
+  /* BLOCK 3 — Editorial Full-Bleed-Aktion (kein Card-Rand) */
+  .editorial-feature { position: relative; margin: 0 calc(var(--space-4) * -1); }
+  .editorial-feature .photo { height: 320px; }
+  .editorial-feature-content { position: absolute; z-index: 1; inset: auto var(--space-4) var(--space-5); color: var(--am-matt-light); }
+  .editorial-kicker { font-family: var(--font-body); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--am-matt-accent); }
+  .editorial-title { font-family: var(--font-display); font-size: 32px; font-weight: 700; line-height: 0.95; margin-top: 6px; max-width: 22ch; }
+  .editorial-desc { font-family: var(--font-body); font-size: 13.5px; margin-top: 8px; max-width: 32ch; opacity: .92; line-height: 1.4; }
+  .editorial-cta { display: inline-block; margin-top: var(--space-3); padding: 10px 18px; border-radius: var(--radius-sm); background: var(--am-matt-accent); color: var(--am-matt-dark); font-family: var(--font-display); font-size: 12.5px; font-weight: 700; }
 
-  /* Coupon scroller */
-  .h-scroll { display: flex; gap: var(--space-3); overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+  /* BLOCK 4 — Coupons: großer horizontaler Slider */
+  .h-scroll { display: flex; gap: var(--space-3); overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; margin: 0 calc(var(--space-4) * -1); padding-left: var(--space-4); padding-right: var(--space-4); }
   .h-scroll::-webkit-scrollbar { display: none; }
-  .coupon-tile { flex: 0 0 80%; scroll-snap-align: start; border-radius: var(--radius-lg); overflow: hidden; background: var(--am-matt-surface); border: 1px solid var(--am-matt-border); box-shadow: var(--shadow-card); }
-  .coupon-tile .photo { height: 130px; }
-  .coupon-tile-body { padding: var(--space-3) var(--space-4) var(--space-4); }
-  .coupon-tile .badge { display: inline-block; background: var(--am-matt-ink); color: var(--am-matt-brass-soft); font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 4px 10px; border-radius: 3px; margin-bottom: 9px; }
-  .coupon-tile-title { font-family: var(--font-display); font-size: 20px; font-weight: 700; line-height: 1; }
-  .coupon-tile-desc { font-family: var(--font-body); font-size: 12.5px; color: var(--am-matt-text-muted); margin-top: 6px; line-height: 1.4; text-transform: none; }
-  .coupon-tile-meta { display: flex; justify-content: space-between; align-items: center; margin-top: var(--space-3); font-family: var(--font-display); font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--am-matt-text-muted); }
+  .coupon-tile { flex: 0 0 84%; scroll-snap-align: start; position: relative; border-radius: var(--radius-lg); overflow: hidden; }
+  .coupon-tile .photo { height: 260px; }
+  .coupon-tile-content { position: absolute; z-index: 1; inset: auto var(--space-4) var(--space-4); color: var(--am-matt-light); }
+  .coupon-tile-kicker { font-family: var(--font-body); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--am-matt-accent); }
+  .coupon-tile-title { font-family: var(--font-display); font-size: 26px; font-weight: 700; line-height: 0.95; margin-top: 4px; }
+  .coupon-tile-desc { font-family: var(--font-body); font-size: 12.5px; margin-top: 6px; opacity: .9; max-width: 26ch; line-height: 1.35; }
+  .coupon-tile-meta { font-family: var(--font-body); font-size: 11px; opacity: .75; margin-top: 8px; }
 
-  /* Food h-scroll — größer, editorialer */
-  .food-tile { flex: 0 0 46%; scroll-snap-align: start; border-radius: var(--radius-md); overflow: hidden; background: var(--am-matt-surface); border: 1px solid var(--am-matt-border); }
-  .food-tile .photo { height: 118px; }
-  .food-tile-body { padding: 11px 13px 13px; }
-  .food-tile-title { font-family: var(--font-display); font-weight: 700; font-size: 15px; line-height: 1.05; text-transform: none; letter-spacing: 0; }
-  .food-tile-price { font-family: var(--font-display); color: var(--am-matt-text-muted); font-weight: 700; font-size: 13px; margin-top: 5px; }
+  /* BLOCK 5 — Aus unserer Küche: unregelmäßige Größen */
+  .kitchen-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: var(--space-3); }
+  .kitchen-tile { position: relative; border-radius: var(--radius-md); overflow: hidden; }
+  .kitchen-tile.tall .photo { height: 220px; }
+  .kitchen-tile.short .photo { height: 104px; margin-bottom: var(--space-3); }
+  .kitchen-tile-content { position: absolute; z-index: 1; inset: auto var(--space-3) var(--space-3); color: var(--am-matt-light); }
+  .kitchen-tile-name { font-family: var(--font-display); font-size: 18px; font-weight: 700; line-height: 1; }
+  .kitchen-tile-price { font-family: var(--font-body); font-size: 12px; opacity: .85; margin-top: 2px; }
+  .kitchen-col { display: flex; flex-direction: column; }
 
-  /* Ambience gallery */
-  .ambience-gallery { display: grid; grid-template-columns: 1.4fr 1fr; grid-template-rows: 1fr 1fr; gap: 6px; height: 250px; border-radius: var(--radius-lg); overflow: hidden; }
-  .ambience-gallery .photo { height: 100%; }
-  .ambience-gallery .big { grid-row: span 2; }
-  .ambience-text { font-family: var(--font-body); font-size: 14px; color: var(--am-matt-text-muted); line-height: 1.6; margin-top: var(--space-3); text-transform: none; }
+  /* BLOCK 7 — Ambiente: 1 groß + 2 klein */
+  .ambience-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 6px; height: 260px; }
+  .ambience-grid .photo { height: 100%; }
+  .ambience-grid .stack { display: grid; grid-template-rows: 1fr 1fr; gap: 6px; }
+  .ambience-text { font-family: var(--font-body); font-size: 14.5px; color: var(--am-matt-text-muted); line-height: 1.6; margin-top: var(--space-3); }
 
-  /* Restaurant info */
-  .info-card { display: grid; gap: 14px; }
-  .info-row { display: flex; gap: 13px; align-items: flex-start; font-family: var(--font-body); font-size: 13.5px; line-height: 1.5; text-transform: none; }
-  .info-row .ic { font-size: 17px; flex-shrink: 0; }
-  .info-row strong { font-family: var(--font-display); font-weight: 700; font-size: 15px; text-transform: none; letter-spacing: 0; }
-  .info-highlight { display: inline-block; margin-top: 5px; padding: 3px 10px; border-radius: 3px; background: var(--am-matt-brass); color: var(--am-matt-ink); font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+  /* BLOCK 8 — Restaurant-Info, minimal */
+  .info-list { border-top: 1px solid var(--am-matt-border); }
+  .info-row { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-3); padding: var(--space-4) 0; border-bottom: 1px solid var(--am-matt-border); font-family: var(--font-body); font-size: 14px; }
+  .info-row .label { font-family: var(--font-display); font-weight: 700; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--am-matt-text-muted); white-space: nowrap; padding-top: 2px; }
+  .info-row .value { text-align: right; line-height: 1.4; }
+  .info-row .value a { text-decoration: underline; }
+  .info-highlight-row { display: flex; justify-content: space-between; align-items: center; padding: var(--space-4) 0; }
+  .info-highlight { display: inline-block; padding: 4px 12px; border-radius: var(--radius-sm); background: var(--am-matt-accent); color: var(--am-matt-dark); font-family: var(--font-display); font-size: 12px; font-weight: 700; }
 
   /* Bottom nav */
   .bottom-nav {
     position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
-    width: 100%; max-width: 480px; background: rgba(247,242,230,.96); backdrop-filter: blur(10px);
+    width: 100%; max-width: 480px; background: rgba(244,240,232,.97); backdrop-filter: blur(10px);
     border-top: 1px solid var(--am-matt-border);
     display: flex; padding: var(--space-2) var(--space-2) calc(var(--space-2) + var(--safe-bottom));
     z-index: 100;
   }
-  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 7px 0; color: var(--am-matt-text-muted); font-family: var(--font-display); font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; border-radius: var(--radius-sm); background: transparent; }
-  .nav-item.active { color: var(--am-matt-brass); }
-  .nav-item .ic { font-size: 20px; line-height: 1; filter: grayscale(1) opacity(0.7); }
-  .nav-item.active .ic { filter: none; }
-  .nav-item svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 7px 0; color: var(--am-matt-text-muted); font-family: var(--font-body); font-size: 10.5px; font-weight: 600; border-radius: var(--radius-sm); transition: color 0.2s; }
+  .nav-item.active { color: var(--am-matt-dark); }
+  .nav-item svg { width: 21px; height: 21px; stroke: currentColor; fill: none; stroke-width: 1.7; opacity: .65; }
+  .nav-item.active svg { opacity: 1; stroke: var(--am-matt-accent); }
 
-  /* SPEISEKARTE */
-  .menu-header { padding: calc(74px + var(--safe-top)) var(--space-4) var(--space-4); background: var(--am-matt-ink); color: #FBF6E9; }
-  .menu-header h1 { font-family: var(--font-display); font-size: 34px; margin: 0; font-weight: 800; }
-  .menu-header p { font-family: var(--font-body); font-size: 13px; opacity: .8; margin: 6px 0 0; text-transform: none; }
-  .menu-tabs { position: sticky; top: 0; z-index: 50; display: flex; gap: 8px; overflow-x: auto; padding: var(--space-3) var(--space-4); background: var(--am-matt-paper); border-bottom: 1px solid var(--am-matt-border); -webkit-overflow-scrolling: touch; }
+  /* SPEISEKARTE — Katalog statt Card-Wand */
+  .menu-header { padding: calc(72px + var(--safe-top)) var(--space-4) var(--space-5); background: var(--am-matt-dark); color: var(--am-matt-light); }
+  .menu-header h1 { font-family: var(--font-display); font-size: 40px; margin: 0; font-weight: 700; }
+  .menu-header p { font-family: var(--font-body); font-size: 13.5px; opacity: .75; margin: 6px 0 0; }
+  .menu-tabs { position: sticky; top: 0; z-index: 50; display: flex; gap: 6px; overflow-x: auto; padding: var(--space-3) var(--space-4); background: var(--am-matt-light); border-bottom: 1px solid var(--am-matt-border); -webkit-overflow-scrolling: touch; }
   .menu-tabs::-webkit-scrollbar { display: none; }
-  .menu-chip { flex-shrink: 0; padding: 9px 16px; border-radius: 3px; background: var(--am-matt-surface); border: 1.5px solid var(--am-matt-border); font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; white-space: nowrap; }
-  .menu-chip.active { background: var(--am-matt-ink); border-color: var(--am-matt-ink); color: var(--am-matt-brass-soft); }
-  .menu-category { padding: var(--space-5) var(--space-4) 0; }
-  .menu-category h2 { font-family: var(--font-display); font-size: 24px; font-weight: 700; margin: 0 0 var(--space-3); }
-  .menu-item { display: flex; gap: 13px; padding: var(--space-3) 0; border-bottom: 1px solid var(--am-matt-border); }
-  .menu-item .photo { width: 62px; height: 62px; border-radius: var(--radius-sm); flex-shrink: 0; }
-  .menu-item-noimg { width: 62px; height: 62px; border-radius: var(--radius-sm); flex-shrink: 0; background: var(--am-matt-paper-2); }
-  .menu-item-body { flex: 1; min-width: 0; }
-  .menu-item-name { font-family: var(--font-body); font-weight: 700; font-size: 14.5px; text-transform: none; letter-spacing: 0; }
-  .menu-item-desc { font-family: var(--font-body); font-size: 12px; color: var(--am-matt-text-muted); margin-top: 2px; line-height: 1.4; text-transform: none; }
-  .menu-item-price { font-family: var(--font-display); font-weight: 700; color: var(--am-matt-text); font-size: 15px; white-space: nowrap; margin-left: auto; align-self: center; }
+  .menu-chip { flex-shrink: 0; padding: 8px 15px; border-radius: var(--radius-sm); background: var(--am-matt-surface-card); border: 1px solid var(--am-matt-border); font-family: var(--font-body); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+  .menu-chip.active { background: var(--am-matt-dark); border-color: var(--am-matt-dark); color: var(--am-matt-accent); }
+  .menu-category { padding: var(--space-6) var(--space-4) 0; }
+  .menu-category h2 { font-family: var(--font-display); font-size: 28px; font-weight: 700; margin: 0 0 var(--space-4); }
+  .menu-highlight { position: relative; border-radius: var(--radius-md); overflow: hidden; margin-bottom: var(--space-5); }
+  .menu-highlight .photo { height: 180px; }
+  .menu-highlight-content { position: absolute; z-index: 1; inset: auto var(--space-3) var(--space-3); color: var(--am-matt-light); }
+  .menu-highlight-name { font-family: var(--font-display); font-size: 22px; font-weight: 700; }
+  .menu-highlight-price { font-family: var(--font-body); font-size: 13px; opacity: .9; margin-top: 2px; }
+  .menu-row { display: flex; align-items: baseline; gap: 8px; padding: var(--space-3) 0; border-bottom: 1px solid var(--am-matt-border); }
+  .menu-row-name { font-family: var(--font-body); font-weight: 600; font-size: 15px; flex-shrink: 0; }
+  .menu-row-leader { flex: 1; border-bottom: 1px dotted var(--am-matt-border); height: 0; transform: translateY(-4px); min-width: 12px; }
+  .menu-row-price { font-family: var(--font-display); font-weight: 700; font-size: 15px; white-space: nowrap; }
+  .menu-row-desc { display: block; font-family: var(--font-body); font-size: 12px; color: var(--am-matt-text-muted); margin-top: 2px; }
+  .menu-row-wrap { padding: var(--space-3) 0; border-bottom: 1px solid var(--am-matt-border); }
 
   /* Login sheet */
-  .login-sheet-backdrop { display: none; position: fixed; inset: 0; background: rgba(20,16,11,.6); z-index: 200; }
+  .login-sheet-backdrop { display: none; position: fixed; inset: 0; background: rgba(32,33,31,.6); z-index: 200; }
   .login-sheet-backdrop.show { display: block; }
   .login-sheet { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); width: 100%; max-width: 480px;
-    background: var(--am-matt-surface); border-radius: 24px 24px 0 0; padding: var(--space-5) var(--space-4) calc(var(--space-5) + var(--safe-bottom)); z-index: 201; }
+    background: var(--am-matt-light); border-radius: 16px 16px 0 0; padding: var(--space-5) var(--space-4) calc(var(--space-5) + var(--safe-bottom)); z-index: 201; }
   .sheet-handle { width: 40px; height: 4px; background: var(--am-matt-border); border-radius: 999px; margin: 0 auto var(--space-4); }
   .field { margin-bottom: var(--space-4); }
-  .field label { display: block; font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 7px; color: var(--am-matt-text-muted); }
-  .field input { width: 100%; padding: 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--am-matt-border); font-family: var(--font-body); font-size: 15px; background: var(--am-matt-paper); }
-  .field input:focus { outline: none; border-color: var(--am-matt-ink); }
-  .auth-switch { text-align: center; margin-top: var(--space-4); font-family: var(--font-body); font-size: 13px; color: var(--am-matt-text-muted); text-transform: none; }
+  .field label { display: block; font-family: var(--font-body); font-size: 12.5px; font-weight: 600; margin-bottom: 6px; color: var(--am-matt-text-muted); }
+  .field input { width: 100%; padding: 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--am-matt-border); font-family: var(--font-body); font-size: 15px; background: #fff; }
+  .field input:focus { outline: none; border-color: var(--am-matt-dark); }
+  .auth-switch { text-align: center; margin-top: var(--space-4); font-family: var(--font-body); font-size: 13px; color: var(--am-matt-text-muted); }
   .auth-switch a { color: var(--am-matt-text); font-weight: 700; text-decoration: underline; }
 
   /* Personal views */
-  .personal-header { padding: calc(74px + var(--safe-top)) var(--space-4) var(--space-4); background: var(--am-matt-ink); color: #FBF6E9; }
-  .personal-header h1 { font-family: var(--font-display); font-size: 32px; margin: 0; font-weight: 800; }
-  .personal-header p { font-family: var(--font-body); font-size: 13px; opacity: .8; margin: 6px 0 0; text-transform: none; }
-  .personal-body { padding: var(--space-4); }
-  .reward-card { display: flex; gap: 13px; align-items: center; margin-bottom: var(--space-3); }
-  .reward-card .photo { width: 58px; height: 58px; border-radius: var(--radius-sm); flex-shrink: 0; }
-  .reward-card.locked { opacity: 0.5; }
-  .reward-card .r-title { font-family: var(--font-body); font-weight: 700; font-size: 14.5px; text-transform: none; }
-  .reward-card .r-desc { font-family: var(--font-body); font-size: 12px; color: var(--am-matt-text-muted); text-transform: none; }
-  .reward-card .cost { font-family: var(--font-display); font-weight: 700; color: var(--am-matt-text); font-size: 14px; white-space: nowrap; margin-left: auto; }
-  .txn-row { display: flex; justify-content: space-between; padding: var(--space-2) 0; border-bottom: 1px solid var(--am-matt-border); font-family: var(--font-body); font-size: 13px; text-transform: none; }
+  .personal-header { padding: calc(72px + var(--safe-top)) var(--space-4) var(--space-4); background: var(--am-matt-dark); color: var(--am-matt-light); }
+  .personal-header h1 { font-family: var(--font-display); font-size: 36px; margin: 0; font-weight: 700; }
+  .personal-header p { font-family: var(--font-body); font-size: 13.5px; opacity: .75; margin: 6px 0 0; }
+  .personal-body { padding: var(--space-5) var(--space-4); }
+
+  /* Rewards als Produkt-Inszenierung */
+  .reward-tile { display: flex; gap: var(--space-4); align-items: center; padding: var(--space-4) 0; border-bottom: 1px solid var(--am-matt-border); }
+  .reward-tile .photo { width: 84px; height: 84px; border-radius: var(--radius-md); flex-shrink: 0; }
+  .reward-tile.locked { opacity: 0.5; }
+  .reward-name { font-family: var(--font-display); font-weight: 700; font-size: 19px; }
+  .reward-desc { font-family: var(--font-body); font-size: 12.5px; color: var(--am-matt-text-muted); margin-top: 2px; }
+  .reward-progress-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .reward-progress-track { flex: 1; height: 4px; background: var(--am-matt-surface); border-radius: 999px; overflow: hidden; }
+  .reward-progress-fill { height: 100%; background: var(--am-matt-accent); border-radius: 999px; }
+  .reward-cost { font-family: var(--font-display); font-weight: 700; font-size: 14px; margin-left: auto; white-space: nowrap; text-align: right; }
+  .reward-cost small { display: block; font-family: var(--font-body); font-weight: 500; font-size: 10.5px; color: var(--am-matt-text-muted); }
+
+  .txn-row { display: flex; justify-content: space-between; padding: var(--space-3) 0; border-bottom: 1px solid var(--am-matt-border); font-family: var(--font-body); font-size: 13.5px; }
   .txn-row:last-child { border-bottom: none; }
   .txn-value.positive { color: var(--am-matt-success); font-weight: 700; }
   .txn-value.negative { color: var(--am-matt-danger); font-weight: 700; }
 
-  .qr-wrap { display: flex; flex-direction: column; align-items: center; padding: var(--space-6) var(--space-4); text-align: center; }
-  .qr-box { background: white; padding: var(--space-5); border-radius: var(--radius-lg); box-shadow: var(--shadow-elevated); border: 1px solid var(--am-matt-border); }
-  #qrcode-canvas { width: 220px; height: 220px; }
-  .qr-name { font-family: var(--font-display); font-weight: 700; margin-top: var(--space-4); font-size: 24px; }
-  .qr-hint { font-family: var(--font-body); color: var(--am-matt-text-muted); font-size: 13px; margin-top: 8px; max-width: 30ch; text-transform: none; }
-  .qr-secure-note { font-family: var(--font-body); margin-top: var(--space-4); padding: 12px 16px; border-radius: var(--radius-sm); background: var(--am-matt-paper-2); color: var(--am-matt-text-muted); font-size: 11.5px; text-align: center; text-transform: none; }
+  /* QR-Karte als Stammgastkarte */
+  .member-card { background: var(--am-matt-dark); border-radius: var(--radius-lg); padding: var(--space-5); color: var(--am-matt-light); position: relative; overflow: hidden; }
+  .member-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--am-matt-accent); }
+  .member-card-brand { font-family: var(--font-display); font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; opacity: .7; }
+  .member-card-name { font-family: var(--font-display); font-size: 26px; font-weight: 700; margin-top: 4px; }
+  .qr-box { background: white; padding: var(--space-4); border-radius: var(--radius-md); margin-top: var(--space-5); }
+  #qrcode-canvas { width: 100%; height: auto; aspect-ratio: 1; display: block; }
+  .member-card-hint { font-family: var(--font-body); font-size: 13px; margin-top: var(--space-4); opacity: .85; text-align: center; }
+  .qr-secure-note { font-family: var(--font-body); margin-top: var(--space-4); padding: 12px 16px; border-radius: var(--radius-sm); background: var(--am-matt-surface); color: var(--am-matt-text-muted); font-size: 11.5px; text-align: center; }
 
-  .profile-row { display: flex; justify-content: space-between; align-items: center; padding: var(--space-3) 0; border-bottom: 1px solid var(--am-matt-border); font-family: var(--font-body); font-size: 14px; text-transform: none; }
+  .profile-row { display: flex; justify-content: space-between; align-items: center; padding: var(--space-3) 0; border-bottom: 1px solid var(--am-matt-border); font-family: var(--font-body); font-size: 14px; }
   .profile-row:last-child { border-bottom: none; }
-  .toggle { width: 44px; height: 26px; border-radius: 999px; background: var(--am-matt-border); position: relative; transition: background 0.2s; flex-shrink: 0; }
-  .toggle.on { background: var(--am-matt-ink); }
-  .toggle::after { content: ''; position: absolute; width: 20px; height: 20px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: left 0.2s; }
-  .toggle.on::after { left: 21px; }
+  .toggle { width: 42px; height: 25px; border-radius: 999px; background: var(--am-matt-border); position: relative; transition: background 0.2s; flex-shrink: 0; }
+  .toggle.on { background: var(--am-matt-dark); }
+  .toggle::after { content: ''; position: absolute; width: 19px; height: 19px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: left 0.2s; }
+  .toggle.on::after { left: 20px; }
 
-  .empty-state { font-family: var(--font-body); text-align: center; padding: var(--space-6) var(--space-4); color: var(--am-matt-text-muted); text-transform: none; }
+  .empty-state { font-family: var(--font-body); text-align: center; padding: var(--space-6) var(--space-4); color: var(--am-matt-text-muted); }
+  .section-title-block { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: var(--space-4); }
 </style>
 </head>
 <body>
@@ -189,73 +208,95 @@
 
   <!-- START -->
   <div id="view-start" class="view active">
+
+    <!-- BLOCK 1: HERO -->
     <div class="hero">
-      <div class="hero-bg"><img src="/assets/img/hero-restaurant.jpg" alt="Restaurant Am-Matt"></div>
+      <div class="photo"><img src="/assets/img/hero-restaurant.jpg" alt="Restaurant Am-Matt bei Nacht"></div>
       <div class="hero-content">
-        <div class="hero-eyebrow">Radevormwald · Seit dem 18. Jahrhundert</div>
+        <div class="hero-kicker">Markt 12 · Radevormwald</div>
         <h1 class="hero-title">Am-Matt</h1>
-        <div class="hero-sub">Modern-regionale Küche im ältesten Fachwerkhaus der Stadt.</div>
+        <div class="hero-sub">Regional verwurzelt.<br>Modern genießen.</div>
         <div class="hero-cta-row">
-          <a class="btn btn-hero-primary" href="tel:+4921956177099">Tisch reservieren</a>
-          <button class="btn btn-hero-secondary" data-goto="menu">Speisekarte</button>
+          <button class="btn btn-hero-primary" data-goto="menu">Speisekarte entdecken</button>
+          <a class="btn btn-hero-secondary" href="tel:+4921956177099">Tisch reservieren</a>
         </div>
       </div>
     </div>
 
-    <div class="section" style="margin-top:-50px; position:relative; z-index:2">
-      <div class="loyalty-card" id="loyalty-teaser">
-        <div class="loyalty-greeting">Deine Vorteile bei Am-Matt</div>
-        <div class="loyalty-teaser-text" style="margin-top:8px">Sammle bei jedem Besuch Punkte, sichere dir Coupons und löse Prämien ein — zeig einfach deine Karte beim Bezahlen.</div>
-        <button class="loyalty-cta" id="loyalty-teaser-cta">Jetzt anmelden</button>
+    <!-- BLOCK 2: PERSÖNLICHER STATUS -->
+    <div class="section">
+      <div class="status-card" id="loyalty-teaser">
+        <div class="status-greeting">Deine Vorteile bei Am-Matt</div>
+        <div class="status-teaser-text">Sammle bei jedem Besuch Punkte, sichere dir Coupons und löse Prämien ein.</div>
+        <button class="status-cta" id="loyalty-teaser-cta">Jetzt anmelden</button>
       </div>
-      <div class="loyalty-card" id="loyalty-points" style="display:none">
-        <div class="loyalty-greeting" id="greeting-name">Hallo!</div>
-        <div class="points-value"><span id="start-points">0</span><small> Punkte</small></div>
+      <div class="status-card" id="loyalty-points" style="display:none">
+        <div class="status-greeting" id="greeting-name">Schön, dass du da bist.</div>
+        <div class="status-points-row">
+          <span class="status-points" id="start-points">0</span>
+          <span class="status-points-label">Punkte</span>
+        </div>
         <div class="progress-track"><div class="progress-fill" id="start-progress" style="width:0%"></div></div>
         <div class="progress-note" id="start-progress-note">Lade Fortschritt…</div>
-        <button class="loyalty-cta" data-goto="rewards">Prämien ansehen</button>
+        <button class="status-cta" data-goto="rewards">Prämien ansehen</button>
       </div>
     </div>
 
+    <!-- BLOCK 3: HEUTE IM AM-MATT (Editorial Full-Bleed) -->
     <div class="section" id="section-campaign">
-      <div class="section-title">Heute im<br>Am-Matt</div>
+      <div class="section-label">Heute</div>
+      <div class="section-title" style="margin-bottom:var(--space-4)">Im Am-Matt</div>
       <div id="campaign-card"></div>
     </div>
 
+    <!-- BLOCK 4: COUPONS -->
     <div class="section" id="section-coupons">
-      <div class="section-title">Deine<br>Coupons</div>
-      <div class="section-sub">Aktivieren und beim Bezahlen zeigen</div>
+      <div class="section-label">Nur für dich</div>
+      <div class="section-title" style="margin-bottom:var(--space-4)">Deine Coupons</div>
       <div class="h-scroll" id="coupons-scroll"></div>
     </div>
 
+    <!-- BLOCK 5: AUS UNSERER KÜCHE -->
     <div class="section">
-      <div class="section-title">Aus unserer<br>Küche</div>
-      <div class="h-scroll" id="food-scroll"></div>
-      <button class="btn btn-outline btn-full" style="margin-top:var(--space-4)" data-goto="menu">Zur ganzen Speisekarte</button>
+      <div class="section-title-block">
+        <div>
+          <div class="section-label">Handverlesen</div>
+          <div class="section-title">Aus unserer<br>Küche</div>
+        </div>
+      </div>
+      <div id="kitchen-grid"></div>
+      <button class="btn btn-outline btn-full" style="margin-top:var(--space-4)" data-goto="menu">Gesamte Speisekarte</button>
     </div>
 
+    <!-- BLOCK 6: SAISON -->
     <div class="section" id="section-seasonal" style="display:none">
-      <div class="section-title" id="seasonal-title">Saison im<br>Am-Matt</div>
+      <div class="section-label">Saison</div>
+      <div class="section-title" style="margin-bottom:var(--space-4)" id="seasonal-title">Im Am-Matt</div>
       <div id="seasonal-card"></div>
     </div>
 
+    <!-- BLOCK 7: AMBIENTE -->
     <div class="section">
-      <div class="section-title">Unser<br>Haus</div>
-      <div class="ambience-gallery">
-        <div class="photo no-vignette big"><img src="/assets/img/ambience-exterior.jpg" alt="Fachwerkhaus Am-Matt"></div>
-        <div class="photo no-vignette"><img src="/assets/img/ambience-interior.jpg" alt="Gastraum"></div>
-        <div class="photo no-vignette"><img src="/assets/img/ambience-terrace.jpg" alt="Terrasse am Marktplatz"></div>
+      <div class="section-label">Seit dem 18. Jahrhundert</div>
+      <div class="section-title" style="margin-bottom:var(--space-4)">Ein Haus mit<br>Geschichte.</div>
+      <div class="ambience-grid">
+        <div class="photo dim"><img src="/assets/img/ambience-exterior.jpg" alt="Fachwerkhaus Am-Matt"></div>
+        <div class="stack">
+          <div class="photo dim"><img src="/assets/img/ambience-interior.jpg" alt="Gastraum"></div>
+          <div class="photo dim"><img src="/assets/img/ambience-terrace.jpg" alt="Terrasse am Marktplatz"></div>
+        </div>
       </div>
-      <div class="ambience-text">Unser bergisches Fachwerkhaus aus dem 18. Jahrhundert zählt zu den ältesten Gebäuden Radevormwalds — 50 Plätze im Erdgeschoss, 70 auf drei Räume im Obergeschoss, dazu unsere Sonnenterrasse mit Blick auf den Marktplatz für rund 80 Gäste.</div>
+      <div class="ambience-text">Unser bergisches Fachwerkhaus zählt zu den ältesten Gebäuden Radevormwalds. 50 Plätze im Erdgeschoss, 70 auf drei Räume im Obergeschoss, dazu unsere Terrasse mit Blick auf den Marktplatz.</div>
     </div>
 
+    <!-- BLOCK 8: RESTAURANT INFO -->
     <div class="section">
-      <div class="section-title">Gut zu<br>wissen</div>
-      <div class="card info-card">
-        <div class="info-row"><span class="ic">🕒</span><div><strong>Öffnungszeiten</strong><br>Mo–Sa 11:30–14:30 &amp; 17:00–22:30 Uhr · So Ruhetag</div></div>
-        <div class="info-row"><span class="ic">📍</span><div><strong>Markt 12, 42477 Radevormwald</strong><br><a href="https://maps.google.com/?q=Restaurant+Am-Matt+Markt+12+42477+Radevormwald" target="_blank" rel="noopener">Route planen →</a></div></div>
-        <div class="info-row"><span class="ic">📞</span><div><a href="tel:+4921956177099"><strong>+49 2195 677099</strong></a></div></div>
-        <div class="info-row"><span class="ic">🥡</span><div>Alle Speisen auch zum Mitnehmen<br><span class="info-highlight">10% Rabatt bei Selbstabholung</span></div></div>
+      <div class="section-title" style="margin-bottom:var(--space-3)">Gut zu<br>wissen</div>
+      <div class="info-list">
+        <div class="info-row"><span class="label">Öffnungszeiten</span><span class="value">Mo–Sa 11:30–14:30 &amp; 17:00–22:30<br>So Ruhetag</span></div>
+        <div class="info-row"><span class="label">Adresse</span><span class="value">Markt 12, 42477 Radevormwald<br><a href="https://maps.google.com/?q=Restaurant+Am-Matt+Markt+12+42477+Radevormwald" target="_blank" rel="noopener">Route planen →</a></span></div>
+        <div class="info-row"><span class="label">Telefon</span><span class="value"><a href="tel:+4921956177099">+49 2195 677099</a></span></div>
+        <div class="info-highlight-row"><span style="font-family:var(--font-body);font-size:14px">Abholung möglich</span><span class="info-highlight">10% Rabatt</span></div>
       </div>
     </div>
   </div>
@@ -281,18 +322,21 @@
     <div class="personal-header"><h1>Prämien</h1><p id="rewards-sub">Punkte sammeln und einlösen</p></div>
     <div class="personal-body">
       <div id="rewards-list"></div>
-      <div class="section-title" style="margin-top:var(--space-5);font-size:20px">Letzte Aktivitäten</div>
-      <div class="card" id="txn-list"></div>
+      <div class="section-title" style="margin-top:var(--space-6);margin-bottom:var(--space-3);font-size:22px">Letzte Aktivitäten</div>
+      <div id="txn-list"></div>
     </div>
   </div>
 
   <!-- QR / KUNDENKARTE -->
   <div id="view-qr" class="view">
     <div class="personal-header"><h1>Deine Karte</h1><p>Beim Bezahlen einfach zeigen</p></div>
-    <div class="qr-wrap" id="qr-content">
-      <div class="qr-box"><canvas id="qrcode-canvas"></canvas></div>
-      <div class="qr-name" id="qr-name">—</div>
-      <div class="qr-hint">Das Personal scannt diesen Code und schreibt deine Punkte gut.</div>
+    <div class="personal-body">
+      <div class="member-card">
+        <div class="member-card-brand">Am-Matt · Stammgast</div>
+        <div class="member-card-name" id="qr-name">—</div>
+        <div class="qr-box"><canvas id="qrcode-canvas"></canvas></div>
+        <div class="member-card-hint">Das Personal scannt diesen Code und schreibt deine Punkte gut.</div>
+      </div>
       <div class="qr-secure-note">Der Code wird regelmäßig erneuert und ist nicht übertragbar.</div>
     </div>
   </div>
@@ -301,15 +345,13 @@
   <div id="view-profile" class="view">
     <div class="personal-header"><h1>Profil</h1><p>Daten &amp; Einstellungen</p></div>
     <div class="personal-body">
-      <div class="card">
-        <div class="profile-row"><span>Name</span><span id="profile-name" style="font-weight:700">—</span></div>
-        <div class="profile-row"><span>E-Mail</span><span id="profile-email" style="font-weight:700">—</span></div>
+      <div class="info-list">
+        <div class="info-row"><span class="label">Name</span><span class="value" id="profile-name">—</span></div>
+        <div class="info-row"><span class="label">E-Mail</span><span class="value" id="profile-email">—</span></div>
       </div>
-      <div class="section-title" style="margin-top:var(--space-5);font-size:20px">Einstellungen</div>
-      <div class="card">
-        <div class="profile-row"><span>Marketing-Einwilligung</span><button class="toggle" id="toggle-marketing"></button></div>
-        <div class="profile-row"><span>Push-Benachrichtigungen</span><button class="toggle" id="toggle-push"></button></div>
-      </div>
+      <div class="section-title" style="margin-top:var(--space-6);margin-bottom:var(--space-3);font-size:22px">Einstellungen</div>
+      <div class="profile-row"><span>Marketing-Einwilligung</span><button class="toggle" id="toggle-marketing"></button></div>
+      <div class="profile-row"><span>Push-Benachrichtigungen</span><button class="toggle" id="toggle-push"></button></div>
       <button class="btn btn-outline btn-full" style="margin-top: var(--space-5)" id="btn-logout">Abmelden</button>
     </div>
   </div>
@@ -317,10 +359,10 @@
   <!-- BOTTOM NAV -->
   <nav class="bottom-nav" id="bottom-nav">
     <button class="nav-item active" data-view="start"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg><span>Start</span></button>
-    <button class="nav-item" data-view="menu"><svg viewBox="0 0 24 24"><path d="M4 3v18M8 3v6a2 2 0 0 0 4 0V3M16 3v18M16 3c2 0 4 2 4 5s-2 5-4 5"/></svg><span>Karte</span></button>
-    <button class="nav-item" data-view="coupons"><svg viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V8z"/><path d="M10 6v12" stroke-dasharray="2 2"/></svg><span>Coupons</span></button>
+    <button class="nav-item" data-view="menu"><svg viewBox="0 0 24 24"><path d="M4 3v18M8 3v6a2 2 0 0 0 4 0V3M16 3v18M16 3c2 0 4 2 4 5s-2 5-4 5"/></svg><span>Speisekarte</span></button>
+    <button class="nav-item" data-view="coupons"><svg viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V8z"/></svg><span>Coupons</span></button>
     <button class="nav-item" data-view="rewards"><svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.4l-6.1 3.2 1.4-6.8-5.1-4.7 6.9-.8z"/></svg><span>Prämien</span></button>
-    <button class="nav-item" data-view="qr"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM19 14h2M14 19h2M19 19h2v2"/></svg><span>Ausweis</span></button>
+    <button class="nav-item" data-view="qr"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span>Karte</span></button>
   </nav>
 
   <div class="toast" id="toast"></div>
@@ -330,7 +372,7 @@
 <div class="login-sheet-backdrop" id="login-backdrop"></div>
 <div class="login-sheet" id="login-sheet" style="display:none">
   <div class="sheet-handle"></div>
-  <h2 id="auth-title" style="margin:0 0 18px;font-size:24px">Anmelden</h2>
+  <h2 id="auth-title" style="margin:0 0 18px;font-size:26px">Anmelden</h2>
   <div class="field"><label for="auth-email">E-Mail</label><input type="email" id="auth-email" aria-label="E-Mail" autocomplete="email"></div>
   <div class="field"><label for="auth-password">Passwort</label><input type="password" id="auth-password" aria-label="Passwort" autocomplete="current-password"></div>
   <div class="field" id="auth-name-field" style="display:none"><label for="auth-name">Name</label><input type="text" id="auth-name" aria-label="Name"></div>

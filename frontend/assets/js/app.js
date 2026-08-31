@@ -1,4 +1,4 @@
-// app.js — Am-Matt Customer Experience (Restaurant + Loyalty als ein Produkt)
+// app.js — Am-Matt Customer Experience v4 (editorial, Restaurant+Loyalty als ein Produkt)
 const API_BASE = '/api/customer';
 const TENANT_ID = 'TENANT_001';
 const REWARD_GOAL_FALLBACK = 600;
@@ -35,6 +35,7 @@ function escapeHtml(str) {
   div.textContent = str || '';
   return div.innerHTML;
 }
+function money(v) { return v != null ? Number(v).toFixed(2).replace('.', ',') + ' €' : ''; }
 
 // --- NAVIGATION ---
 const PERSONAL_VIEWS = ['coupons', 'rewards', 'qr', 'profile'];
@@ -70,7 +71,7 @@ document.querySelectorAll('[data-goto]').forEach(item => {
 });
 document.getElementById('topbar-avatar-btn').addEventListener('click', () => showView('profile'));
 
-// --- LOGIN SHEET (bottom sheet, not a blocking full page) ---
+// --- LOGIN SHEET ---
 let authMode = 'login';
 function openLoginSheet() {
   document.getElementById('login-backdrop').classList.add('show');
@@ -157,7 +158,7 @@ async function refreshIdentity() {
 async function loadStart() {
   if (state.token && state.customer) {
     const first = (state.customer.display_name || '').split(' ')[0];
-    document.getElementById('greeting-name').textContent = first ? `Hallo ${escapeHtml(first)}` : 'Willkommen zurück!';
+    document.getElementById('greeting-name').textContent = first ? `Schön, dass du da bist, ${escapeHtml(first)}.` : 'Schön, dass du da bist.';
     document.getElementById('start-points').textContent = state.customer.points_balance;
     let goal = REWARD_GOAL_FALLBACK;
     try {
@@ -170,17 +171,16 @@ async function loadStart() {
     document.getElementById('start-progress').style.width = pct + '%';
     const remaining = Math.max(0, goal - state.customer.points_balance);
     document.getElementById('start-progress-note').textContent = remaining > 0
-      ? `Noch ${remaining} Punkte bis zur nächsten Prämie`
+      ? `Noch ${remaining} Punkte bis zu deiner nächsten Prämie.`
       : 'Prämie bereits erreicht — jetzt einlösen!';
   }
 
-  // Aktuelle Kampagne (öffentlich)
   try {
     const campaigns = await api('/campaigns/live');
-    renderCampaignCards(campaigns);
+    renderCampaignFeature(campaigns);
+    renderSeasonalFeature(campaigns);
   } catch (e) {}
 
-  // Coupons (nur mit Login personalisiert; sonst Login-Einladung)
   const couponsScroll = document.getElementById('coupons-scroll');
   const couponsSection = document.getElementById('section-coupons');
   if (state.token) {
@@ -193,88 +193,93 @@ async function loadStart() {
     couponsSection.style.display = 'block';
     couponsScroll.innerHTML = `
       <div class="coupon-tile" style="flex:0 0 100%">
-        <div class="coupon-tile-body" style="text-align:center;padding:var(--space-5) var(--space-4)">
-          <div style="font-size:32px">🎟️</div>
-          <div class="coupon-tile-title" style="margin-top:8px">Melde dich an für deine Vorteile</div>
+        <div class="photo dim"><img src="/assets/img/dish-schnitzel.jpg" alt=""></div>
+        <div class="coupon-tile-content">
+          <div class="coupon-tile-kicker">Für Stammgäste</div>
+          <div class="coupon-tile-title">Melde dich an</div>
           <div class="coupon-tile-desc">Aktuelle Coupons und Rabatte warten auf dich.</div>
-          <button class="btn btn-primary btn-full" style="margin-top:14px" onclick="document.getElementById('topbar-login-btn').click()">Jetzt anmelden</button>
+          <button class="editorial-cta" style="margin-top:12px;border:0" onclick="document.getElementById('topbar-login-btn').click()">Jetzt anmelden</button>
         </div>
       </div>`;
   }
 
-  // Empfehlungen aus der Küche (öffentlich, aus Speisekarte)
   try {
     const categories = await getMenu();
-    renderFoodScroll(categories);
-    renderSeasonalCard(categories);
+    renderKitchenGrid(categories);
   } catch (e) {}
 }
 
-function renderCampaignCards(campaigns) {
+function renderCampaignFeature(campaigns) {
   const el = document.getElementById('campaign-card');
   const weekly = campaigns.filter(c => c.campaign_type !== 'seasonal');
   if (!weekly.length) {
-    el.innerHTML = `<div class="feature-card"><div class="photo"><img src="/assets/img/dish-schnitzel.jpg" alt=""></div><div class="feature-body"><div class="feature-eyebrow">Diese Woche</div><div class="feature-title">Schauen Sie bald wieder vorbei</div><div class="feature-desc">Neue Angebote folgen in Kürze.</div></div></div>`;
+    el.innerHTML = `<div class="editorial-feature"><div class="photo dim"><img src="/assets/img/dish-schnitzel.jpg" alt=""></div><div class="editorial-feature-content"><div class="editorial-kicker">Diese Woche</div><div class="editorial-title">Schau bald wieder vorbei</div><div class="editorial-desc">Neue Angebote folgen in Kürze.</div></div></div>`;
     return;
   }
-  el.innerHTML = weekly.map(c => `
-    <div class="feature-card">
-      <div class="photo"><img src="${escapeHtml(c.image_url || '/assets/img/dish-schnitzel.jpg')}" alt=""></div>
-      <div class="feature-body">
-        <div class="feature-eyebrow">Diese Woche</div>
-        <div class="feature-title">${escapeHtml(c.title)}</div>
-        <div class="feature-desc">${escapeHtml(c.description || '')}</div>
+  const c = weekly[0];
+  el.innerHTML = `
+    <div class="editorial-feature">
+      <div class="photo dim"><img src="${escapeHtml(c.image_url || '/assets/img/dish-schnitzel.jpg')}" alt=""></div>
+      <div class="editorial-feature-content">
+        <div class="editorial-kicker">Diese Woche</div>
+        <div class="editorial-title">${escapeHtml(c.title)}</div>
+        <div class="editorial-desc">${escapeHtml(c.description || '')}</div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
 }
 
-function renderSeasonalCard(categories) {
+function renderSeasonalFeature(campaigns) {
   const seasonalSection = document.getElementById('section-seasonal');
-  api('/campaigns/live').then(campaigns => {
-    const seasonal = campaigns.find(c => c.campaign_type === 'seasonal');
-    if (!seasonal) { seasonalSection.style.display = 'none'; return; }
-    seasonalSection.style.display = 'block';
-    document.getElementById('seasonal-card').innerHTML = `
-      <div class="feature-card">
-        <div class="photo"><img src="${escapeHtml(seasonal.image_url || '/assets/img/dish-spargel.jpg')}" alt=""></div>
-        <div class="feature-body">
-          <div class="feature-eyebrow">Saison</div>
-          <div class="feature-title">${escapeHtml(seasonal.title)}</div>
-          <div class="feature-desc">${escapeHtml(seasonal.description || '')}</div>
-        </div>
-      </div>`;
-  }).catch(() => { seasonalSection.style.display = 'none'; });
+  const seasonal = campaigns.find(c => c.campaign_type === 'seasonal');
+  if (!seasonal) { seasonalSection.style.display = 'none'; return; }
+  seasonalSection.style.display = 'block';
+  document.getElementById('seasonal-card').innerHTML = `
+    <div class="editorial-feature">
+      <div class="photo dim"><img src="${escapeHtml(seasonal.image_url || '/assets/img/dish-spargel.jpg')}" alt=""></div>
+      <div class="editorial-feature-content">
+        <div class="editorial-kicker">Nur solange die Saison reicht</div>
+        <div class="editorial-title">${escapeHtml(seasonal.title)}</div>
+        <div class="editorial-desc">${escapeHtml(seasonal.description || '')}</div>
+      </div>
+    </div>`;
 }
 
 function renderCouponScroll(container, coupons) {
   container.innerHTML = coupons.map(c => `
     <div class="coupon-tile">
-      <div class="photo"><img src="${escapeHtml(c.image_url || '/assets/img/dish-schnitzel.jpg')}" alt=""></div>
-      <div class="coupon-tile-body">
-        <div class="badge">Verfügbar</div>
+      <div class="photo dim"><img src="${escapeHtml(c.image_url || '/assets/img/dish-schnitzel.jpg')}" alt=""></div>
+      <div class="coupon-tile-content">
+        <div class="coupon-tile-kicker">Verfügbar</div>
         <div class="coupon-tile-title">${escapeHtml(c.title)}</div>
         <div class="coupon-tile-desc">${escapeHtml(c.description || '')}</div>
-        <div class="coupon-tile-meta"><span>1× einlösbar</span><span>Beim Personal zeigen</span></div>
+        <div class="coupon-tile-meta">1× einlösbar · beim Personal zeigen</div>
       </div>
     </div>
   `).join('');
 }
 
-function renderFoodScroll(categories) {
+function renderKitchenGrid(categories) {
   const withImages = [];
   categories.forEach(cat => cat.items.forEach(i => { if (i.image_url) withImages.push(i); }));
-  const el = document.getElementById('food-scroll');
-  const picks = withImages.length ? withImages : categories.flatMap(c => c.items).slice(0, 6);
-  el.innerHTML = picks.slice(0, 8).map(i => `
-    <div class="food-tile">
-      <div class="photo"><img src="${escapeHtml(i.image_url || '/assets/img/dish-schnitzel.jpg')}" alt=""></div>
-      <div class="food-tile-body">
-        <div class="food-tile-title">${escapeHtml(i.name)}</div>
-        <div class="food-tile-price">${i.price != null ? i.price.toFixed(2).replace('.', ',') + ' €' : ''}</div>
+  const el = document.getElementById('kitchen-grid');
+  const picks = withImages.length ? withImages.slice(0, 3) : categories.flatMap(c => c.items).slice(0, 3);
+  if (!picks.length) { el.innerHTML = ''; return; }
+  const [big, ...rest] = picks;
+  el.innerHTML = `
+    <div class="kitchen-grid">
+      <div class="kitchen-tile tall">
+        <div class="photo dim"><img src="${escapeHtml(big.image_url || '/assets/img/dish-schnitzel.jpg')}" alt=""></div>
+        <div class="kitchen-tile-content"><div class="kitchen-tile-name">${escapeHtml(big.name)}</div><div class="kitchen-tile-price">${money(big.price)}</div></div>
       </div>
-    </div>
-  `).join('');
+      <div class="kitchen-col">
+        ${rest.map(i => `
+          <div class="kitchen-tile short">
+            <div class="photo dim"><img src="${escapeHtml(i.image_url || '/assets/img/dish-schnitzel.jpg')}" alt=""></div>
+            <div class="kitchen-tile-content"><div class="kitchen-tile-name" style="font-size:15px">${escapeHtml(i.name)}</div><div class="kitchen-tile-price">${money(i.price)}</div></div>
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
 }
 
 // --- SPEISEKARTE ---
@@ -289,21 +294,34 @@ async function loadMenu() {
     const tabs = document.getElementById('menu-tabs');
     tabs.innerHTML = categories.map((c, i) => `<button class="menu-chip ${i === 0 ? 'active' : ''}" data-cat="${c.id}">${escapeHtml(c.name)}</button>`).join('');
     const catEl = document.getElementById('menu-categories');
-    catEl.innerHTML = categories.map(c => `
+    catEl.innerHTML = categories.map(c => {
+      const withImg = c.items.filter(i => i.image_url);
+      const highlight = withImg[0];
+      const rest = c.items.filter(i => i !== highlight);
+      return `
       <div class="menu-category" id="menu-cat-${c.id}">
         <h2>${escapeHtml(c.name)}</h2>
-        ${c.items.map(i => `
-          <div class="menu-item">
-            ${i.image_url ? `<div class="photo"><img src="${escapeHtml(i.image_url)}" alt=""></div>` : `<div class="menu-item-noimg"></div>`}
-            <div class="menu-item-body">
-              <div class="menu-item-name">${escapeHtml(i.name)}${i.vegetarian ? ' 🌱' : ''}</div>
-              ${i.description ? `<div class="menu-item-desc">${escapeHtml(i.description)}</div>` : ''}
+        ${highlight ? `
+          <div class="menu-highlight">
+            <div class="photo dim"><img src="${escapeHtml(highlight.image_url)}" alt=""></div>
+            <div class="menu-highlight-content">
+              <div class="menu-highlight-name">${escapeHtml(highlight.name)}</div>
+              <div class="menu-highlight-price">${money(highlight.price)}</div>
             </div>
-            <div class="menu-item-price">${i.price != null ? Number(i.price).toFixed(2).replace('.', ',') + ' €' : ''}</div>
+          </div>` : ''}
+        ${rest.map(i => `
+          <div class="menu-row-wrap">
+            <div class="menu-row">
+              <span class="menu-row-name">${escapeHtml(i.name)}${i.vegetarian ? ' 🌱' : ''}</span>
+              <span class="menu-row-leader"></span>
+              <span class="menu-row-price">${money(i.price)}</span>
+            </div>
+            ${i.description ? `<span class="menu-row-desc">${escapeHtml(i.description)}</span>` : ''}
           </div>
         `).join('')}
       </div>
-    `).join('');
+    `;
+    }).join('');
 
     tabs.querySelectorAll('.menu-chip').forEach(chip => {
       chip.addEventListener('click', () => {
@@ -324,17 +342,17 @@ async function loadCoupons() {
   try {
     const coupons = await api('/coupons');
     if (!coupons.length) {
-      list.innerHTML = `<div class="empty-state">🎟️<br>Aktuell keine verfügbaren Coupons — schau bald wieder vorbei.</div>`;
+      list.innerHTML = `<div class="empty-state">Aktuell keine verfügbaren Coupons — schau bald wieder vorbei.</div>`;
       return;
     }
     list.innerHTML = coupons.map(c => `
-      <div class="feature-card">
-        <div class="photo"><img src="${escapeHtml(c.image_url || '/assets/img/dish-schnitzel.jpg')}" alt=""></div>
-        <div class="feature-body">
-          <div class="feature-eyebrow">Verfügbar</div>
-          <div class="feature-title">${escapeHtml(c.title)}</div>
-          <div class="feature-desc">${escapeHtml(c.description || '')}</div>
-          <div class="feature-meta"><span class="tag">1× einlösbar</span><span class="tag">Beim Personal zeigen</span></div>
+      <div class="editorial-feature" style="margin:0 0 var(--space-5)">
+        <div class="photo dim"><img src="${escapeHtml(c.image_url || '/assets/img/dish-schnitzel.jpg')}" alt=""></div>
+        <div class="editorial-feature-content">
+          <div class="editorial-kicker">Verfügbar</div>
+          <div class="editorial-title">${escapeHtml(c.title)}</div>
+          <div class="editorial-desc">${escapeHtml(c.description || '')}</div>
+          <div class="editorial-cta">Beim Personal zeigen</div>
         </div>
       </div>
     `).join('');
@@ -350,14 +368,20 @@ async function loadRewardsView() {
   try {
     const rewards = await api('/rewards');
     const balance = state.customer ? state.customer.points_balance : 0;
-    document.getElementById('rewards-list').innerHTML = rewards.length ? rewards.map(r => `
-      <div class="card reward-card ${r.points_cost > balance ? 'locked' : ''}">
+    document.getElementById('rewards-list').innerHTML = rewards.length ? rewards.map(r => {
+      const locked = r.points_cost > balance;
+      const pct = Math.min(100, Math.round((balance / r.points_cost) * 100));
+      return `
+      <div class="reward-tile ${locked ? 'locked' : ''}">
         ${r.image_url ? `<div class="photo"><img src="${escapeHtml(r.image_url)}" alt=""></div>` : ''}
-        <div><div class="r-title">${escapeHtml(r.title)}</div>
-        <div class="r-desc">${escapeHtml(r.description || '')}</div></div>
-        <div class="cost">${r.points_cost} P</div>
+        <div style="flex:1;min-width:0">
+          <div class="reward-name">${escapeHtml(r.title)}</div>
+          <div class="reward-desc">${escapeHtml(r.description || '')}</div>
+          ${locked ? `<div class="reward-progress-row"><div class="reward-progress-track"><div class="reward-progress-fill" style="width:${pct}%"></div></div></div>` : ''}
+        </div>
+        <div class="reward-cost">${r.points_cost}<small>${locked ? `noch ${r.points_cost - balance}` : 'Punkte'}</small></div>
       </div>
-    `).join('') : `<div class="empty-state">Noch keine Prämien verfügbar</div>`;
+    `; }).join('') : `<div class="empty-state">Noch keine Prämien verfügbar</div>`;
 
     const { transactions } = await api('/points');
     document.getElementById('txn-list').innerHTML = transactions.length ? transactions.map(t => `
@@ -388,15 +412,15 @@ function loadQr() {
   document.getElementById('qr-name').textContent = state.customer.display_name || state.customer.email;
   const canvas = document.getElementById('qrcode-canvas');
   const ctx = canvas.getContext('2d');
-  canvas.width = 220; canvas.height = 220;
-  ctx.clearRect(0, 0, 220, 220);
+  canvas.width = 240; canvas.height = 240;
+  ctx.clearRect(0, 0, 240, 240);
   try {
     const qr = qrcode(0, 'M');
     qr.addData(state.customer.qr_code_token);
     qr.make();
-    const cellSize = Math.floor(220 / qr.getModuleCount());
-    const offset = (220 - cellSize * qr.getModuleCount()) / 2;
-    ctx.fillStyle = '#2B2320';
+    const cellSize = Math.floor(240 / qr.getModuleCount());
+    const offset = (240 - cellSize * qr.getModuleCount()) / 2;
+    ctx.fillStyle = '#20211F';
     for (let row = 0; row < qr.getModuleCount(); row++) {
       for (let col = 0; col < qr.getModuleCount(); col++) {
         if (qr.isDark(row, col)) ctx.fillRect(offset + col * cellSize, offset + row * cellSize, cellSize, cellSize);
