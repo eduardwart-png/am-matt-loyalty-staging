@@ -8,6 +8,9 @@ const state = {
   customer: null,
   menuCache: null,
 };
+let menuScrollSpyFn = null;
+let menuSpyTicking = false;
+window.addEventListener('scroll', () => { if (menuScrollSpyFn) menuScrollSpyFn(); }, { passive: true });
 
 function api(path, opts = {}) {
   const headers = Object.assign({
@@ -328,9 +331,33 @@ async function loadMenu() {
         tabs.querySelectorAll('.menu-chip').forEach(c => c.classList.remove('active'));
         chip.classList.add('active');
         const target = document.getElementById('menu-cat-' + chip.dataset.cat);
-        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (target) {
+          const offset = tabs.offsetHeight + 74; // Topbar + Tabs-Leiste
+          const top = target.getBoundingClientRect().top + window.scrollY - offset;
+          window.scrollTo({ top, behavior: 'smooth' });
+        }
       });
     });
+
+    // Scroll-Spy: aktiver Tab folgt der sichtbaren Kategorie beim Scrollen
+    const catSections = categories.map(c => document.getElementById('menu-cat-' + c.id)).filter(Boolean);
+    function updateActiveTabOnScroll() {
+      menuSpyTicking = false;
+      const probeY = tabs.getBoundingClientRect().bottom + 40;
+      let current = catSections[0];
+      for (const sec of catSections) {
+        if (sec.getBoundingClientRect().top - probeY <= 0) current = sec;
+      }
+      if (!current) return;
+      const catId = current.id.replace('menu-cat-', '');
+      tabs.querySelectorAll('.menu-chip').forEach(c => c.classList.toggle('active', c.dataset.cat === catId));
+      const activeChip = tabs.querySelector('.menu-chip.active');
+      if (activeChip) activeChip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+    menuScrollSpyFn = () => {
+      if (!document.getElementById('view-menu').classList.contains('active')) return;
+      if (!menuSpyTicking) { menuSpyTicking = true; requestAnimationFrame(updateActiveTabOnScroll); }
+    };
   } catch (e) {
     document.getElementById('menu-categories').innerHTML = `<div class="empty-state">Speisekarte konnte nicht geladen werden.</div>`;
   }

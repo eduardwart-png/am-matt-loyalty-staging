@@ -37,6 +37,14 @@ async function seedMenu() {
     '5 gegrillte Gambas': '/assets/img/dish-gambas.jpg',
     'Gambas': '/assets/img/dish-gambas.jpg',
     'Baklava': '/assets/img/dish-baklava.jpg',
+    'Bruschetta': '/assets/img/dish-bruschetta.jpg',
+    'Frisches Brot': '/assets/img/dish-brot.jpg',
+    'Kartoffel-Lauchsuppe': '/assets/img/dish-suppe.jpg',
+    'Kartoffel-Lauchsuppe mit Lachs': '/assets/img/dish-suppe.jpg',
+    'Frische Tomatensuppe': '/assets/img/dish-tomatensuppe.jpg',
+    'Gebackener Camembert': '/assets/img/dish-camembert.jpg',
+    'Bunter Salatteller': '/assets/img/dish-salat.jpg',
+    'California Salat': '/assets/img/dish-salat.jpg',
   };
 
   const { rows } = await query(`SELECT COUNT(*) as n FROM menu_categories WHERE tenant_id = 'TENANT_001'`);
