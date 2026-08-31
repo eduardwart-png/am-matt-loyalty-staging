@@ -295,6 +295,7 @@ async function loadMenu() {
   try {
     const categories = await getMenu();
     const tabs = document.getElementById('menu-tabs');
+    const CATEGORY_SCROLL_OFFSET = tabs.offsetHeight + 74; // Fixe Topbar + Tabs-Leiste — identisch fuer Klick-Sprung UND Scroll-Spy-Messlinie
     tabs.innerHTML = categories.map((c, i) => `<button class="menu-chip ${i === 0 ? 'active' : ''}" data-cat="${c.id}">${escapeHtml(c.name)}</button>`).join('');
     const catEl = document.getElementById('menu-categories');
     catEl.innerHTML = categories.map(c => {
@@ -333,8 +334,7 @@ async function loadMenu() {
         chip.classList.add('active');
         const target = document.getElementById('menu-cat-' + chip.dataset.cat);
         if (target) {
-          const offset = tabs.offsetHeight + 74; // Topbar + Tabs-Leiste
-          const top = target.getBoundingClientRect().top + window.scrollY - offset;
+          const top = target.getBoundingClientRect().top + window.scrollY - CATEGORY_SCROLL_OFFSET;
           window.scrollTo({ top, behavior: 'smooth' });
         }
       });
@@ -353,7 +353,7 @@ async function loadMenu() {
     const catSections = categories.map(c => document.getElementById('menu-cat-' + c.id)).filter(Boolean);
     function updateActiveTabOnScroll() {
       menuSpyTicking = false;
-      const probeY = tabs.getBoundingClientRect().bottom + 40;
+      const probeY = CATEGORY_SCROLL_OFFSET + 1;
       let current = catSections[0];
       for (const sec of catSections) {
         if (sec.getBoundingClientRect().top - probeY <= 0) current = sec;
