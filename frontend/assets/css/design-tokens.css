@@ -1,0 +1,99 @@
+/* design-tokens.css — Am-Matt Design System (aus echtem Branding abgeleitet, keine 1:1-Kopie der alten Seite) */
+:root {
+  --am-matt-primary: #1B4D3E;      /* tiefes Waldgrün, bergisch-gastronomisch, hochwertig */
+  --am-matt-primary-dark: #0F332A;
+  --am-matt-accent: #C9A24B;       /* warmes Gold, Premium-Anmutung */
+  --am-matt-accent-light: #E4C878;
+  --am-matt-bg: #FAF8F3;           /* warmes Off-White */
+  --am-matt-surface: #FFFFFF;
+  --am-matt-text: #1E2422;
+  --am-matt-text-muted: #5F6A64;
+  --am-matt-border: #E7E2D6;
+  --am-matt-success: #2E7D4F;
+  --am-matt-danger: #B3413B;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --shadow-card: 0 2px 12px rgba(27, 77, 62, 0.08);
+  --shadow-elevated: 0 8px 24px rgba(27, 77, 62, 0.14);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font-body);
+  background: var(--am-matt-bg);
+  color: var(--am-matt-text);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  overscroll-behavior-y: none;
+}
+h1, h2, h3, .display { font-family: var(--font-display); font-weight: 600; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; }
+img { max-width: 100%; display: block; }
+
+.card {
+  background: var(--am-matt-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-4);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 14px 20px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 15px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--am-matt-primary); color: white; }
+.btn-accent { background: var(--am-matt-accent); color: var(--am-matt-primary-dark); }
+.btn-outline { background: transparent; border: 1.5px solid var(--am-matt-border); color: var(--am-matt-text); }
+.btn-full { width: 100%; }
+
+.pill { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+.pill-demo { background: #FFF3CD; color: #8A6D1E; }
+.pill-veg { background: #E4F3E7; color: var(--am-matt-success); }
+
+.skeleton {
+  background: linear-gradient(90deg, #EFEBE0 25%, #F5F2E8 50%, #EFEBE0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: var(--radius-sm);
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+.toast {
+  position: fixed;
+  bottom: calc(88px + var(--safe-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--am-matt-primary-dark);
+  color: white;
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  box-shadow: var(--shadow-elevated);
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+.toast.error { background: var(--am-matt-danger); }
+.toast.success { background: var(--am-matt-success); }

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Am-Matt Operations Studio</title>
+<link rel="stylesheet" href="/assets/css/design-tokens.css">
+<style>
+  body { background: var(--am-matt-bg); }
+  #app { max-width: 900px; margin: 0 auto; padding: var(--space-5) var(--space-4) 60px; }
+  .app-header { margin-bottom: var(--space-5); }
+  .app-header h1 { font-size: 24px; margin: 0; color: var(--am-matt-primary); }
+  .tabs { display: flex; gap: 4px; margin-bottom: var(--space-5); border-bottom: 1px solid var(--am-matt-border); overflow-x: auto; }
+  .tab { padding: 10px 16px; font-weight: 600; font-size: 14px; color: var(--am-matt-text-muted); border-bottom: 3px solid transparent; white-space: nowrap; }
+  .tab.active { color: var(--am-matt-primary); border-color: var(--am-matt-primary); }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  table { width: 100%; border-collapse: collapse; background: white; border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-card); }
+  th, td { text-align: left; padding: 10px 14px; font-size: 13.5px; border-bottom: 1px solid var(--am-matt-border); }
+  th { background: var(--am-matt-bg); font-weight: 700; }
+  tr:last-child td { border-bottom: none; }
+  .status-badge { padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+  .status-draft { background: #EEE; color: #666; }
+  .status-scheduled { background: #FFF3CD; color: #8A6D1E; }
+  .status-live { background: #E4F3E7; color: var(--am-matt-success); }
+  .status-expired { background: #FDE8E7; color: var(--am-matt-danger); }
+  .status-archived { background: #EEE; color: #999; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin-bottom: var(--space-4); }
+  .form-grid .full { grid-column: 1 / -1; }
+  .field label { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 4px; }
+  .field input, .field select, .field textarea { width: 100%; padding: 9px 10px; border-radius: var(--radius-sm); border: 1.5px solid var(--am-matt-border); font-size: 14px; }
+  .job-status { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+  .job-card { background: white; border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); box-shadow: var(--shadow-card); min-width: 200px; }
+  .login-box { max-width: 340px; margin: 100px auto; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="view-login" class="login-box card">
+    <h2 style="margin-top:0">Operations Studio</h2>
+    <div class="field" style="margin-bottom:12px"><label for="admin-username">Benutzername</label><input id="admin-username" aria-label="Benutzername" value="admin"></div>
+    <div class="field" style="margin-bottom:12px"><label for="admin-password">Passwort</label><input id="admin-password" aria-label="Passwort" type="password"></div>
+    <button class="btn btn-primary btn-full" id="admin-login-btn">Anmelden</button>
+    <div style="font-size:11px;color:var(--am-matt-text-muted);margin-top:12px">Demo: admin / admin1234</div>
+  </div>
+
+  <div id="view-main" class="hidden">
+    <div class="app-header">
+      <h1>Restaurant Am-Matt — Operations Studio</h1>
+      <div style="color:var(--am-matt-text-muted);font-size:13.5px">Kampagnen, Coupons und Speisekarte ohne Entwicklerwissen verwalten.</div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-panel="campaigns">Kampagnen</div>
+      <div class="tab" data-panel="coupons">Coupons</div>
+      <div class="tab" data-panel="menu">Speisekarte</div>
+      <div class="tab" data-panel="ledger">Transaktionen</div>
+      <div class="tab" data-panel="jobs">Systemstatus</div>
+    </div>
+
+    <div id="panel-campaigns" class="panel active">
+      <div class="card" style="margin-bottom:var(--space-4)">
+        <h3 style="margin-top:0">Neue Kampagne</h3>
+        <div class="form-grid">
+          <div class="field full"><label>Titel</label><input id="camp-title" placeholder="z.B. Spargelzeit"></div>
+          <div class="field full"><label>Beschreibung</label><textarea id="camp-desc" rows="2" placeholder="Beschreibung für die App"></textarea></div>
+          <div class="field"><label>Typ</label>
+            <select id="camp-type">
+              <option value="offer">Angebot</option>
+              <option value="daily">Tagesangebot</option>
+              <option value="weekly">Wochenangebot</option>
+              <option value="monthly">Monatsangebot</option>
+              <option value="seasonal">Saisonkampagne</option>
+              <option value="event">Event</option>
+            </select>
+          </div>
+          <div class="field"><label>Status</label>
+            <select id="camp-status">
+              <option value="draft">Entwurf</option>
+              <option value="scheduled">Terminiert</option>
+              <option value="live">Sofort live</option>
+            </select>
+          </div>
+          <div class="field"><label>Start</label><input id="camp-start" type="datetime-local"></div>
+          <div class="field"><label>Ende</label><input id="camp-end" type="datetime-local"></div>
+        </div>
+        <button class="btn btn-primary" id="camp-create-btn">Kampagne anlegen</button>
+      </div>
+      <table id="campaigns-table">
+        <thead><tr><th>Titel</th><th>Typ</th><th>Status</th><th>Start</th><th>Ende</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div id="panel-coupons" class="panel">
+      <div class="card" style="margin-bottom:var(--space-4)">
+        <h3 style="margin-top:0">Neuer Coupon</h3>
+        <div class="form-grid">
+          <div class="field"><label>Code</label><input id="coupon-code" placeholder="z.B. STAMMKUNDE15"></div>
+          <div class="field"><label>Titel</label><input id="coupon-title" placeholder="z.B. 15% für Stammkunden"></div>
+          <div class="field"><label>Rabatt-Typ</label>
+            <select id="coupon-disc-type"><option value="percent">Prozent</option><option value="fixed">Fester Betrag</option><option value="free_item">Gratis-Artikel</option></select>
+          </div>
+          <div class="field"><label>Rabatt-Wert</label><input id="coupon-disc-value" type="number" value="10"></div>
+          <div class="field"><label>Max. Nutzungen pro Kunde</label><input id="coupon-max-per-customer" type="number" value="1"></div>
+          <div class="field"><label>Status</label>
+            <select id="coupon-status"><option value="draft">Entwurf</option><option value="live">Sofort live</option></select>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="coupon-create-btn">Coupon anlegen</button>
+      </div>
+      <table id="coupons-table">
+        <thead><tr><th>Code</th><th>Titel</th><th>Rabatt</th><th>Status</th><th>Max/Kunde</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div id="panel-menu" class="panel">
+      <table id="menu-table">
+        <thead><tr><th>Kategorie</th><th>Gericht</th><th>Preis</th><th>Status</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div id="panel-ledger" class="panel">
+      <table id="ledger-table">
+        <thead><tr><th>Kunde</th><th>Wert</th><th>Grund</th><th>Quelle</th><th>Zeit</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div id="panel-jobs" class="panel">
+      <div class="job-status" id="jobs-container"></div>
+    </div>
+  </div>
+</div>
+<script src="/assets/js/admin.js"></script>
+</body>
+</html>

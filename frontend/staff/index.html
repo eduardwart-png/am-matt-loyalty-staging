@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Am-Matt Personal</title>
+<link rel="stylesheet" href="/assets/css/design-tokens.css">
+<style>
+  #app { max-width: 480px; margin: 0 auto; min-height: 100vh; padding: var(--space-4); padding-bottom: 40px; }
+  .app-header { padding: var(--space-4) 0; }
+  .app-header .brand { font-family: var(--font-display); font-size: 20px; color: var(--am-matt-primary); }
+  video#scanner { width: 100%; border-radius: var(--radius-md); background: #000; aspect-ratio: 1/1; object-fit: cover; }
+  .manual-entry { display: flex; gap: 8px; margin-top: var(--space-3); }
+  .manual-entry input { flex: 1; padding: 12px; border-radius: var(--radius-sm); border: 1.5px solid var(--am-matt-border); }
+  .customer-found { margin-top: var(--space-4); }
+  .customer-found .name { font-size: 18px; font-weight: 700; }
+  .customer-found .balance { color: var(--am-matt-primary); font-weight: 700; font-size: 24px; margin: 8px 0; }
+  .action-row { display: flex; gap: 8px; margin-top: var(--space-4); }
+  .quick-points { display: flex; gap: 8px; flex-wrap: wrap; margin-top: var(--space-3); }
+  .quick-points button { flex: 1; min-width: 60px; padding: 10px; border-radius: var(--radius-sm); border: 1.5px solid var(--am-matt-border); background: white; font-weight: 600; }
+  .quick-points button:active { background: var(--am-matt-bg); }
+  .hidden { display: none !important; }
+  .field { margin-bottom: var(--space-4); }
+  .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .field input { width: 100%; padding: 12px 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--am-matt-border); font-size: 15px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="view-login">
+    <div class="app-header"><div class="brand">Personal-Login</div></div>
+    <div class="card">
+      <div class="field"><label for="staff-username">Benutzername</label><input id="staff-username" aria-label="Benutzername" value="personal"></div>
+      <div class="field"><label for="staff-password">Passwort</label><input id="staff-password" aria-label="Passwort" type="password"></div>
+      <button class="btn btn-primary btn-full" id="staff-login-btn">Anmelden</button>
+      <div style="font-size:11px;color:var(--am-matt-text-muted);margin-top:12px">Demo: personal / personal1234</div>
+    </div>
+  </div>
+
+  <div id="view-scan" class="hidden">
+    <div class="app-header"><div class="brand">QR scannen</div></div>
+    <video id="scanner" playsinline muted></video>
+    <canvas id="scan-canvas" class="hidden"></canvas>
+    <div class="manual-entry">
+      <input id="manual-qr" placeholder="Oder Code manuell eingeben">
+      <button class="btn btn-outline" id="manual-lookup-btn">Suchen</button>
+    </div>
+
+    <div id="customer-found" class="customer-found hidden card">
+      <div class="name" id="cf-name">—</div>
+      <div style="color:var(--am-matt-text-muted);font-size:13px" id="cf-email">—</div>
+      <div class="balance" id="cf-balance">0 Punkte</div>
+
+      <div style="font-weight:600;font-size:13px;margin-top:8px">Punkte buchen</div>
+      <div class="quick-points">
+        <button data-pts="5">+5</button>
+        <button data-pts="10">+10</button>
+        <button data-pts="20">+20</button>
+        <button data-pts="50">+50</button>
+      </div>
+
+      <div class="field" style="margin-top:16px">
+        <label>Coupon-Code einlösen</label>
+        <div style="display:flex;gap:8px">
+          <input id="coupon-code-input" placeholder="z.B. WILLKOMMEN10" style="flex:1;padding:10px;border-radius:8px;border:1.5px solid var(--am-matt-border)">
+          <button class="btn btn-accent" id="redeem-coupon-btn">Einlösen</button>
+        </div>
+      </div>
+
+      <button class="btn btn-outline btn-full" style="margin-top:16px" id="new-scan-btn">Neuer Scan</button>
+    </div>
+  </div>
+</div>
+<script src="/assets/js/jsQR.js"></script>
+<script src="/assets/js/staff.js"></script>
+</body>
+</html>
