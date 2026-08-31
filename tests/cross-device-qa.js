@@ -30,7 +30,7 @@ const { chromium } = require('C:/Users/eduar/AppData/Roaming/npm/node_modules/pl
     // 2. Speisekarte öffentlich erreichbar
     await page.click('.nav-item[data-view="menu"]');
     await page.waitForTimeout(600);
-    const menuItemsCount = await page.locator('.menu-item').count().catch(() => 0);
+    const menuItemsCount = await page.locator('.menu-row, .menu-highlight').count().catch(() => 0);
 
     // 3. Zurück zu Start, dann Login über Sheet
     await page.click('.nav-item[data-view="start"]');
