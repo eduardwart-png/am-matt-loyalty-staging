@@ -125,8 +125,9 @@
   .menu-header h1 { font-family: var(--font-display); font-size: 40px; margin: 0; font-weight: 700; }
   .menu-header p { font-family: var(--font-body); font-size: 13.5px; opacity: .75; margin: 6px 0 0; }
   .menu-tabs-wrap { position: sticky; top: 0; z-index: 50; }
-  .menu-tabs { display: flex; gap: 6px; overflow-x: auto; padding: var(--space-3) var(--space-4); background: rgba(23,21,17,.97); backdrop-filter: blur(10px); border-bottom: 1px solid var(--am-matt-border); -webkit-overflow-scrolling: touch; }
-  .menu-tabs-wrap::after { content: ''; position: absolute; right: 0; top: 0; bottom: 1px; width: 28px; background: linear-gradient(90deg, rgba(23,21,17,0), rgba(23,21,17,.9)); pointer-events: none; }
+  .menu-tabs-wrap { position: relative; }
+  .menu-tabs { display: flex; gap: 6px; overflow-x: auto; padding: var(--space-3) var(--space-4); padding-right: calc(var(--space-4) + 20px); background: rgba(23,21,17,.97); backdrop-filter: blur(10px); border-bottom: 1px solid var(--am-matt-border); -webkit-overflow-scrolling: touch; }
+  .menu-tabs-wrap::after { content: ''; position: absolute; right: 0; top: 0; bottom: 1px; width: 32px; background: linear-gradient(90deg, rgba(23,21,17,0), var(--am-matt-dark) 80%); pointer-events: none; }
   .menu-tabs::-webkit-scrollbar { display: none; }
   .menu-chip { flex-shrink: 0; padding: 8px 15px; border-radius: var(--radius-sm); background: transparent; border: 1px solid var(--am-matt-border); color: var(--am-matt-text-muted); font-family: var(--font-body); font-size: 12.5px; font-weight: 600; white-space: nowrap; transition: background .15s, color .15s, border-color .15s; }
   .menu-chip.active { background: var(--am-matt-surface-2); border-color: var(--am-matt-accent-dim); color: var(--am-matt-light); }
