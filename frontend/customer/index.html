@@ -3,24 +3,100 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Restaurant Am-Matt Radevormwald — Ihre digitale Treuekarte: Punkte sammeln, Coupons einlösen, Prämien erhalten.">
+<meta name="description" content="Restaurant Am-Matt Radevormwald — modern-regionale Küche, Speisekarte, aktuelle Angebote und deine persönliche Treuekarte.">
 <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-<title>Am-Matt Treuekarte</title>
+<title>Am-Matt</title>
 <link rel="stylesheet" href="/assets/css/design-tokens.css">
 <style>
-  #app { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 96px; position: relative; }
+  #app { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 90px; position: relative; }
 
-  /* Header mit echtem Restaurantbild */
-  .app-header { position: relative; padding: var(--space-5) var(--space-4) var(--space-4); color: white; border-radius: 0 0 var(--radius-lg) var(--radius-lg); overflow: hidden; background: var(--am-matt-primary-dark); }
-  .app-header.with-photo { min-height: 128px; display: flex; flex-direction: column; justify-content: flex-end; }
-  .app-header.with-photo::before { content: ''; position: absolute; inset: 0; background-image: url('/assets/img/hero-restaurant.jpg'); background-size: cover; background-position: center 55%; }
-  .app-header.with-photo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(74,31,31,.35) 0%, rgba(74,31,31,.88) 100%); }
-  .app-header .brand-row { position: relative; z-index: 1; }
-  .app-header .brand { font-family: var(--font-display); font-size: 23px; font-weight: 600; }
-  .app-header .sub { opacity: 0.9; font-size: 13px; margin-top: 2px; }
-  .app-header.plain { background: var(--am-matt-primary); }
+  /* Top bar: Brand + Avatar/Login */
+  .topbar { position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; z-index: 90;
+    display: flex; align-items: center; justify-content: space-between; padding: calc(12px + var(--safe-top)) var(--space-4) 12px; }
+  .topbar.on-hero { background: transparent; }
+  .topbar.solid { background: rgba(251,246,236,.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--am-matt-border); }
+  .topbar-brand { font-family: var(--font-display); font-weight: 600; font-size: 19px; }
+  .topbar.on-hero .topbar-brand { color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,.35); }
+  .avatar-btn { width: 38px; height: 38px; border-radius: 50%; background: var(--am-matt-primary); color: #FFF5EA;
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; border: 2px solid rgba(255,255,255,.5); }
+  .login-chip { padding: 8px 16px; border-radius: 999px; background: rgba(255,255,255,.92); color: var(--am-matt-primary-dark); font-size: 12.5px; font-weight: 800; }
 
-  /* Bottom Nav */
+  /* Views */
+  .view { display: none; }
+  .view.active { display: block; }
+  .section { padding: 0 var(--space-4); margin-top: var(--space-6); }
+  .section-title { font-family: var(--font-display); font-size: 21px; font-weight: 600; margin: 0 0 var(--space-3); }
+  .section-sub { color: var(--am-matt-text-muted); font-size: 13px; margin-top: -8px; margin-bottom: var(--space-3); }
+
+  /* HERO */
+  .hero { position: relative; min-height: 78vh; display: flex; align-items: flex-end; overflow: hidden; }
+  .hero-bg { position: absolute; inset: 0; background-image: url('/assets/img/hero-restaurant.jpg'); background-size: cover; background-position: center 55%; }
+  .hero-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(43,26,18,.05) 0%, rgba(43,26,18,.55) 55%, rgba(43,26,18,.96) 100%); }
+  .hero-content { position: relative; z-index: 1; color: #FFF5EA; padding: var(--space-4) var(--space-4) var(--space-6); width: 100%; }
+  .hero-eyebrow { font-size: 11.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--am-matt-accent-light); }
+  .hero-title { font-family: var(--font-display); font-size: 38px; font-weight: 600; line-height: 1.05; margin: 8px 0 0; }
+  .hero-sub { font-size: 15px; opacity: .92; margin-top: 8px; max-width: 30ch; }
+  .hero-cta-row { display: flex; gap: 10px; margin-top: var(--space-5); }
+  .hero-cta-row .btn { flex: 1; padding: 14px 12px; font-size: 13px; }
+  .btn-hero-primary { background: var(--am-matt-accent); color: #3A2A0A; }
+  .btn-hero-secondary { background: rgba(255,255,255,.14); border: 1.5px solid rgba(255,255,255,.5); color: #fff; }
+
+  /* Loyalty teaser (logged out) / points card (logged in) */
+  .loyalty-card { position: relative; overflow: hidden; background: linear-gradient(135deg, var(--am-matt-primary), var(--am-matt-primary-dark)); color: #FFF5EA; border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-elevated); }
+  .loyalty-card::after { content: ''; position: absolute; right: -60px; top: -50px; width: 190px; height: 190px; border-radius: 50%; border: 30px solid rgba(255,255,255,.08); }
+  .loyalty-greeting { position: relative; z-index: 1; font-family: var(--font-display); font-size: 20px; font-weight: 600; }
+  .points-value { position: relative; z-index: 1; font-family: var(--font-display); font-size: 44px; font-weight: 600; line-height: 1; margin-top: 10px; }
+  .points-value small { font-size: 18px; opacity: 0.8; font-weight: 500; }
+  .progress-track { position: relative; z-index: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 999px; margin-top: var(--space-4); overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--am-matt-accent); border-radius: 999px; transition: width 0.6s ease; }
+  .progress-note { position: relative; z-index: 1; font-size: 12.5px; opacity: 0.9; margin-top: var(--space-2); }
+  .loyalty-cta { position: relative; z-index: 1; display: inline-block; margin-top: var(--space-4); font-size: 13px; font-weight: 800; color: var(--am-matt-accent-light); }
+  .loyalty-teaser-text { position: relative; z-index: 1; font-size: 14.5px; line-height: 1.5; opacity: .95; }
+
+  /* Aktion / Coupon / Food / Ambience cards */
+  .feature-card { position: relative; border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-card); background: var(--am-matt-surface); border: 1px solid var(--am-matt-border); margin-bottom: var(--space-4); }
+  .feature-card img { width: 100%; height: 160px; object-fit: cover; }
+  .feature-body { padding: var(--space-4); }
+  .feature-eyebrow { font-size: 10.5px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--am-matt-primary); }
+  .feature-title { font-family: var(--font-display); font-size: 19px; font-weight: 600; margin: 4px 0 0; }
+  .feature-desc { font-size: 13px; color: var(--am-matt-text-muted); margin-top: 6px; line-height: 1.5; }
+  .feature-meta { display: flex; justify-content: space-between; align-items: center; margin-top: var(--space-3); }
+  .feature-meta .tag { font-size: 11px; font-weight: 700; color: var(--am-matt-text-muted); }
+
+  /* Coupon scroller */
+  .h-scroll { display: flex; gap: var(--space-3); overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+  .h-scroll::-webkit-scrollbar { display: none; }
+  .coupon-tile { flex: 0 0 78%; scroll-snap-align: start; border-radius: var(--radius-lg); overflow: hidden; background: var(--am-matt-surface); border: 1px solid var(--am-matt-border); box-shadow: var(--shadow-card); }
+  .coupon-tile img { width: 100%; height: 110px; object-fit: cover; }
+  .coupon-tile-body { padding: var(--space-3) var(--space-4) var(--space-4); }
+  .coupon-tile .badge { display: inline-block; background: var(--am-matt-accent); color: #3A2A0A; font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding: 3px 9px; border-radius: 6px; margin-bottom: 8px; }
+  .coupon-tile .status-badge { background: var(--am-matt-forest); color: #fff; }
+  .coupon-tile-title { font-weight: 700; font-size: 15px; }
+  .coupon-tile-desc { font-size: 12px; color: var(--am-matt-text-muted); margin-top: 4px; line-height: 1.4; }
+  .coupon-tile-meta { display: flex; justify-content: space-between; align-items: center; margin-top: var(--space-3); font-size: 11px; color: var(--am-matt-text-muted); }
+  .coupon-activate-btn { width: 100%; margin-top: var(--space-3); padding: 11px; border-radius: var(--radius-sm); background: var(--am-matt-primary); color: #FFF5EA; font-size: 12.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .02em; }
+  .coupon-activate-btn[disabled] { background: var(--am-matt-forest); }
+
+  /* Food h-scroll */
+  .food-tile { flex: 0 0 44%; scroll-snap-align: start; border-radius: var(--radius-md); overflow: hidden; background: var(--am-matt-surface); border: 1px solid var(--am-matt-border); }
+  .food-tile img { width: 100%; height: 100px; object-fit: cover; }
+  .food-tile-body { padding: 10px 12px 12px; }
+  .food-tile-title { font-weight: 700; font-size: 12.5px; line-height: 1.3; }
+  .food-tile-price { color: var(--am-matt-primary); font-weight: 800; font-size: 12px; margin-top: 4px; }
+
+  /* Ambience gallery */
+  .ambience-gallery { display: grid; grid-template-columns: 1.4fr 1fr; grid-template-rows: 1fr 1fr; gap: 8px; height: 240px; border-radius: var(--radius-lg); overflow: hidden; }
+  .ambience-gallery img { width: 100%; height: 100%; object-fit: cover; }
+  .ambience-gallery .big { grid-row: span 2; }
+  .ambience-text { font-size: 13.5px; color: var(--am-matt-text-muted); line-height: 1.6; margin-top: var(--space-3); }
+
+  /* Restaurant info */
+  .info-card { display: grid; gap: 12px; }
+  .info-row { display: flex; gap: 12px; align-items: flex-start; font-size: 13.5px; line-height: 1.5; }
+  .info-row .ic { font-size: 17px; flex-shrink: 0; }
+  .info-highlight { display: inline-block; margin-top: 4px; padding: 3px 10px; border-radius: 999px; background: var(--am-matt-accent-light); color: #5A3E0A; font-size: 11.5px; font-weight: 800; }
+
+  /* Bottom nav */
   .bottom-nav {
     position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
     width: 100%; max-width: 480px; background: rgba(255,255,255,.97); backdrop-filter: blur(10px);
@@ -32,44 +108,51 @@
   .nav-item.active { color: var(--am-matt-primary); }
   .nav-item .ic { font-size: 19px; line-height: 1; }
 
-  .view { padding: var(--space-4); display: none; }
-  .view.active { display: block; }
+  /* SPEISEKARTE */
+  .menu-header { padding: calc(70px + var(--safe-top)) var(--space-4) var(--space-3); background: var(--am-matt-primary); color: #FFF5EA; }
+  .menu-header h1 { font-family: var(--font-display); font-size: 26px; margin: 0; }
+  .menu-header p { font-size: 13px; opacity: .9; margin: 4px 0 0; }
+  .menu-tabs { position: sticky; top: 0; z-index: 50; display: flex; gap: 8px; overflow-x: auto; padding: var(--space-3) var(--space-4); background: var(--am-matt-bg); border-bottom: 1px solid var(--am-matt-border); -webkit-overflow-scrolling: touch; }
+  .menu-tabs::-webkit-scrollbar { display: none; }
+  .menu-chip { flex-shrink: 0; padding: 9px 16px; border-radius: 999px; background: var(--am-matt-surface); border: 1.5px solid var(--am-matt-border); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+  .menu-chip.active { background: var(--am-matt-primary); border-color: var(--am-matt-primary); color: #FFF5EA; }
+  .menu-category { padding: var(--space-5) var(--space-4) 0; }
+  .menu-category h2 { font-family: var(--font-display); font-size: 20px; font-weight: 600; margin: 0 0 var(--space-3); }
+  .menu-item { display: flex; gap: 12px; padding: var(--space-3) 0; border-bottom: 1px solid var(--am-matt-border); }
+  .menu-item img { width: 60px; height: 60px; border-radius: var(--radius-sm); object-fit: cover; flex-shrink: 0; }
+  .menu-item-noimg { width: 60px; height: 60px; border-radius: var(--radius-sm); flex-shrink: 0; background: var(--am-matt-bg-warm); }
+  .menu-item-body { flex: 1; min-width: 0; }
+  .menu-item-name { font-weight: 700; font-size: 14px; }
+  .menu-item-desc { font-size: 12px; color: var(--am-matt-text-muted); margin-top: 2px; line-height: 1.4; }
+  .menu-item-price { font-weight: 800; color: var(--am-matt-primary); font-size: 14px; white-space: nowrap; margin-left: auto; align-self: center; }
 
-  .section-title { font-size: 13px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--am-matt-text-muted); margin: var(--space-5) 0 var(--space-3); }
+  /* Login sheet (bottom sheet, not full-page block) */
+  .login-sheet-backdrop { display: none; position: fixed; inset: 0; background: rgba(20,12,8,.55); z-index: 200; }
+  .login-sheet-backdrop.show { display: block; }
+  .login-sheet { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); width: 100%; max-width: 480px;
+    background: var(--am-matt-surface); border-radius: 24px 24px 0 0; padding: var(--space-5) var(--space-4) calc(var(--space-5) + var(--safe-bottom)); z-index: 201; }
+  .sheet-handle { width: 40px; height: 4px; background: var(--am-matt-border); border-radius: 999px; margin: 0 auto var(--space-4); }
+  .field { margin-bottom: var(--space-4); }
+  .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .field input { width: 100%; padding: 13px 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--am-matt-border); font-size: 15px; background: white; }
+  .field input:focus { outline: none; border-color: var(--am-matt-primary); }
+  .auth-switch { text-align: center; margin-top: var(--space-4); font-size: 13px; color: var(--am-matt-text-muted); }
+  .auth-switch a { color: var(--am-matt-primary); font-weight: 700; }
 
-  /* Start — Punktekarte (Lidl/Payback-Muster: großer Zahlenwert, Fortschrittsleiste, warmer Verlauf) */
-  .points-card { position: relative; overflow: hidden; background: linear-gradient(135deg, var(--am-matt-primary), var(--am-matt-primary-dark)); color: #FFF5EA; border-radius: var(--radius-lg); padding: var(--space-5); margin-top: -30px; box-shadow: var(--shadow-elevated); }
-  .points-card::after { content: ''; position: absolute; right: -60px; top: -50px; width: 190px; height: 190px; border-radius: 50%; border: 30px solid rgba(255,255,255,.08); }
-  .points-label { position: relative; z-index: 1; opacity: 0.85; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
-  .points-value { position: relative; z-index: 1; font-family: var(--font-display); font-size: 48px; font-weight: 600; line-height: 1; margin-top: 6px; }
-  .points-value small { font-size: 20px; opacity: 0.8; font-weight: 500; }
-  .progress-track { position: relative; z-index: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 999px; margin-top: var(--space-4); overflow: hidden; }
-  .progress-fill { height: 100%; background: var(--am-matt-accent); border-radius: 999px; transition: width 0.6s ease; }
-  .progress-note { position: relative; z-index: 1; font-size: 12.5px; opacity: 0.9; margin-top: var(--space-2); }
-
-  .offer-card { display: flex; gap: var(--space-3); align-items: center; margin-bottom: var(--space-3); }
-  .offer-card .icon { width: 48px; height: 48px; border-radius: var(--radius-sm); background: var(--am-matt-accent-light); display: flex; align-items: center; justify-content: center; font-size: 21px; flex-shrink: 0; overflow: hidden; }
-  .offer-card .icon img { width: 100%; height: 100%; object-fit: cover; }
-  .offer-card .title { font-weight: 700; font-size: 14.5px; }
-  .offer-card .desc { font-size: 12.5px; color: var(--am-matt-text-muted); margin-top: 2px; }
-
-  /* Coupons — Ticket-Optik statt gestricheltem Rahmen */
-  .coupon-card { position: relative; margin-bottom: var(--space-3); background: linear-gradient(135deg, #fff, var(--am-matt-bg-warm)); }
-  .coupon-card::before, .coupon-card::after { content: ''; position: absolute; width: 16px; height: 16px; background: var(--am-matt-bg); border-radius: 50%; top: 50%; transform: translateY(-50%); }
-  .coupon-card::before { left: -8px; } .coupon-card::after { right: -8px; }
-  .coupon-card .badge { display: inline-block; background: var(--am-matt-primary); color: #FFF5EA; font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding: 3px 9px; border-radius: 6px; margin-bottom: 8px; }
-  .coupon-card .code { font-family: monospace; font-weight: 700; font-size: 13px; background: var(--am-matt-bg); padding: 5px 12px; border-radius: 8px; display: inline-block; margin-top: var(--space-3); letter-spacing: 0.05em; }
-
-  /* Punkte/Prämien — Leiter-Optik */
-  .reward-card { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: var(--space-3); }
+  /* Personal views (Coupons/Rewards/QR) */
+  .personal-header { padding: calc(70px + var(--safe-top)) var(--space-4) var(--space-4); background: var(--am-matt-primary); color: #FFF5EA; }
+  .personal-header h1 { font-family: var(--font-display); font-size: 24px; margin: 0; }
+  .personal-header p { font-size: 13px; opacity: .9; margin: 4px 0 0; }
+  .personal-body { padding: var(--space-4); }
+  .reward-card { display: flex; gap: 12px; align-items: center; margin-bottom: var(--space-3); }
+  .reward-card img { width: 56px; height: 56px; border-radius: var(--radius-sm); object-fit: cover; flex-shrink: 0; }
   .reward-card.locked { opacity: 0.55; }
-  .reward-card .cost { font-weight: 800; color: var(--am-matt-primary); font-size: 13px; white-space: nowrap; }
+  .reward-card .cost { font-weight: 800; color: var(--am-matt-primary); font-size: 13px; white-space: nowrap; margin-left: auto; }
   .txn-row { display: flex; justify-content: space-between; padding: var(--space-2) 0; border-bottom: 1px solid var(--am-matt-border); font-size: 13px; }
   .txn-row:last-child { border-bottom: none; }
   .txn-value.positive { color: var(--am-matt-success); font-weight: 700; }
   .txn-value.negative { color: var(--am-matt-danger); font-weight: 700; }
 
-  /* QR / Kundenkarte — wie physische Karte */
   .qr-wrap { display: flex; flex-direction: column; align-items: center; padding: var(--space-6) var(--space-4); text-align: center; }
   .qr-box { background: white; padding: var(--space-5); border-radius: var(--radius-lg); box-shadow: var(--shadow-elevated); border: 1px solid var(--am-matt-border); }
   #qrcode-canvas { width: 220px; height: 220px; }
@@ -77,7 +160,6 @@
   .qr-hint { color: var(--am-matt-text-muted); font-size: 13px; margin-top: 6px; max-width: 30ch; }
   .qr-secure-note { margin-top: var(--space-4); padding: 12px 16px; border-radius: var(--radius-sm); background: var(--am-matt-bg-warm); color: var(--am-matt-text-muted); font-size: 11.5px; text-align: center; }
 
-  /* Profil */
   .profile-row { display: flex; justify-content: space-between; align-items: center; padding: var(--space-3) 0; border-bottom: 1px solid var(--am-matt-border); font-size: 14px; }
   .profile-row:last-child { border-bottom: none; }
   .toggle { width: 44px; height: 26px; border-radius: 999px; background: var(--am-matt-border); position: relative; transition: background 0.2s; flex-shrink: 0; }
@@ -85,115 +167,138 @@
   .toggle::after { content: ''; position: absolute; width: 20px; height: 20px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: left 0.2s; }
   .toggle.on::after { left: 21px; }
 
-  /* Auth — warmer Hero statt trockenem Formular */
-  .auth-hero { position: relative; min-height: 240px; display: flex; align-items: flex-end; padding: var(--space-5) var(--space-4) var(--space-6); color: white; overflow: hidden; }
-  .auth-hero::before { content: ''; position: absolute; inset: 0; background-image: url('/assets/img/hero-restaurant.jpg'); background-size: cover; background-position: center 55%; }
-  .auth-hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(43,26,18,.15) 0%, rgba(43,26,18,.92) 92%); }
-  .auth-hero-content { position: relative; z-index: 1; }
-  .auth-hero .brand { font-family: var(--font-display); font-size: 30px; font-weight: 600; }
-  .auth-hero .sub { opacity: 0.92; font-size: 14px; margin-top: 6px; }
-  .auth-view { padding: var(--space-5) var(--space-4) var(--space-6); }
-  .field { margin-bottom: var(--space-4); }
-  .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
-  .field input { width: 100%; padding: 13px 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--am-matt-border); font-size: 15px; background: white; }
-  .field input:focus { outline: none; border-color: var(--am-matt-primary); }
-  .auth-switch { text-align: center; margin-top: var(--space-4); font-size: 13px; color: var(--am-matt-text-muted); }
-  .auth-switch a { color: var(--am-matt-primary); font-weight: 700; }
-  .preview-cta { display: block; text-align: center; margin-top: var(--space-5); padding: 14px; border-radius: var(--radius-md); background: var(--am-matt-bg-warm); border: 1.5px dashed var(--am-matt-accent); font-size: 13.5px; font-weight: 700; color: var(--am-matt-primary-dark); }
-  .preview-cta span { display: block; font-weight: 500; font-size: 11.5px; color: var(--am-matt-text-muted); margin-top: 3px; text-transform: none; letter-spacing: 0; }
-
   .empty-state { text-align: center; padding: var(--space-6) var(--space-4); color: var(--am-matt-text-muted); }
+  .locked-prompt { text-align: center; padding: var(--space-6) var(--space-5); }
+  .locked-prompt .ic { font-size: 40px; }
+  .locked-prompt h3 { font-family: var(--font-display); font-size: 20px; margin: var(--space-3) 0 6px; }
+  .locked-prompt p { font-size: 13.5px; color: var(--am-matt-text-muted); margin-bottom: var(--space-4); }
 </style>
 </head>
 <body>
-<div class="preview-badge" id="preview-badge">Vorschau — keine echten Daten</div>
+<div class="topbar on-hero" id="topbar">
+  <div class="topbar-brand">Am-Matt</div>
+  <button class="login-chip" id="topbar-login-btn">Anmelden</button>
+  <button class="avatar-btn hidden" id="topbar-avatar-btn" style="display:none">A</button>
+</div>
+
 <main id="app">
 
-  <!-- AUTH VIEW -->
-  <div id="view-auth" class="view active">
-    <div class="auth-hero">
-      <div class="auth-hero-content">
-        <div class="brand">Restaurant Am-Matt</div>
-        <div class="sub">Markt 12 · 42477 Radevormwald</div>
+  <!-- START (public + personal combined) -->
+  <div id="view-start" class="view active">
+    <div class="hero">
+      <div class="hero-bg"></div>
+      <div class="hero-content">
+        <div class="hero-eyebrow">Radevormwald · Bergisches Fachwerkhaus</div>
+        <h1 class="hero-title">Am-Matt</h1>
+        <div class="hero-sub">Modern-regionale Küche im Herzen der Stadt.</div>
+        <div class="hero-cta-row">
+          <a class="btn btn-hero-primary" href="tel:+4921956177099">Tisch reservieren</a>
+          <button class="btn btn-hero-secondary" data-goto="menu">Speisekarte</button>
+        </div>
       </div>
     </div>
-    <div class="auth-view">
-      <h2 id="auth-title" style="margin:0 0 18px">Anmelden</h2>
-      <div class="field"><label for="auth-email">E-Mail</label><input type="email" id="auth-email" aria-label="E-Mail" autocomplete="email"></div>
-      <div class="field"><label for="auth-password">Passwort</label><input type="password" id="auth-password" aria-label="Passwort" autocomplete="current-password"></div>
-      <div class="field" id="auth-name-field" style="display:none"><label for="auth-name">Name</label><input type="text" id="auth-name" aria-label="Name"></div>
-      <button class="btn btn-primary btn-full" id="auth-submit">Anmelden</button>
-      <div class="auth-switch">Noch kein Konto? <a href="#" id="auth-toggle-mode">Jetzt registrieren</a></div>
-      <button class="preview-cta" id="btn-preview-mode" type="button">🔍 Ohne Anmeldung ansehen<span>App-Inhalte mit Beispieldaten direkt durchklicken</span></button>
-    </div>
-  </div>
 
-  <!-- START -->
-  <div id="view-start" class="view">
-    <div class="app-header with-photo">
-      <div class="brand-row">
-        <div class="brand">Restaurant Am-Matt</div>
-        <div class="sub">Markt 12 · 42477 Radevormwald</div>
+    <div class="section" style="margin-top:-46px; position:relative; z-index:2">
+      <!-- Logged-out teaser -->
+      <div class="loyalty-card" id="loyalty-teaser">
+        <div class="loyalty-greeting">Deine Vorteile bei Am-Matt</div>
+        <div class="loyalty-teaser-text" style="margin-top:8px">Sammle bei jedem Besuch Punkte, sichere dir Coupons und löse Prämien ein — zeig einfach deine Karte beim Bezahlen.</div>
+        <button class="loyalty-cta" id="loyalty-teaser-cta">Jetzt anmelden →</button>
       </div>
-    </div>
-    <div style="padding: 0 var(--space-4)">
-      <div class="points-card">
-        <div class="points-label">Ihr Punktestand <span class="pill pill-demo" id="demo-pill" style="margin-left:6px;display:none">DEMO</span></div>
+      <!-- Logged-in points card -->
+      <div class="loyalty-card hidden" id="loyalty-points" style="display:none">
+        <div class="loyalty-greeting" id="greeting-name">Hallo!</div>
         <div class="points-value"><span id="start-points">0</span><small> Punkte</small></div>
         <div class="progress-track"><div class="progress-fill" id="start-progress" style="width:0%"></div></div>
         <div class="progress-note" id="start-progress-note">Lade Fortschritt…</div>
-      </div>
-
-      <div class="section-title">Aktuelle Aktion</div>
-      <div id="start-campaign" class="card offer-card">
-        <div class="icon"><img src="/assets/img/dish-schnitzel.jpg" alt=""></div>
-        <div><div class="title">Lade…</div></div>
-      </div>
-
-      <div class="section-title">Restaurant-Info</div>
-      <div class="card" style="font-size:13.5px; line-height:1.6">
-        <div><strong>Öffnungszeiten:</strong> Mo–Sa 11:30–14:30 &amp; 17:00–22:30 Uhr</div>
-        <div>Sonntag: Ruhetag</div>
-        <div style="margin-top:8px"><strong>Tel:</strong> <a href="tel:+4921956177099">+49 2195 677099</a></div>
-        <div style="margin-top:8px; color: var(--am-matt-text-muted)">Alle Speisen auch zum Mitnehmen (auslastungsabhängig) · 10% Rabatt bei Selbstabholung</div>
+        <button class="loyalty-cta" data-goto="rewards">Prämien ansehen →</button>
       </div>
     </div>
+
+    <div class="section" id="section-campaign">
+      <div class="section-title">Heute im Am-Matt</div>
+      <div id="campaign-card"></div>
+    </div>
+
+    <div class="section" id="section-coupons">
+      <div class="section-title">Deine Coupons</div>
+      <div class="section-sub">Aktivieren und beim Bezahlen zeigen</div>
+      <div class="h-scroll" id="coupons-scroll"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Empfohlen aus der Küche</div>
+      <div class="h-scroll" id="food-scroll"></div>
+      <button class="btn btn-outline btn-full" style="margin-top:var(--space-4)" data-goto="menu">Zur ganzen Speisekarte</button>
+    </div>
+
+    <div class="section" id="section-seasonal" style="display:none">
+      <div class="section-title" id="seasonal-title">Saisonal im Am-Matt</div>
+      <div id="seasonal-card"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Unser Haus</div>
+      <div class="ambience-gallery">
+        <img class="big" src="/assets/img/ambience-exterior.jpg" alt="Fachwerkhaus Am-Matt">
+        <img src="/assets/img/ambience-interior.jpg" alt="Gastraum">
+        <img src="/assets/img/ambience-terrace.jpg" alt="Terrasse am Marktplatz">
+      </div>
+      <div class="ambience-text">Unser bergisches Fachwerkhaus aus dem 18. Jahrhundert zählt zu den ältesten Gebäuden Radevormwalds — 50 Plätze im Erdgeschoss, 70 auf drei Räume im Obergeschoss, dazu unsere Sonnenterrasse mit Blick auf den Marktplatz für rund 80 Gäste.</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Gut zu wissen</div>
+      <div class="card info-card">
+        <div class="info-row"><span class="ic">🕒</span><div><strong>Öffnungszeiten</strong><br>Mo–Sa 11:30–14:30 &amp; 17:00–22:30 Uhr · So Ruhetag</div></div>
+        <div class="info-row"><span class="ic">📍</span><div><strong>Markt 12, 42477 Radevormwald</strong><br><a href="https://maps.google.com/?q=Restaurant+Am-Matt+Markt+12+42477+Radevormwald" target="_blank" rel="noopener">Route planen →</a></div></div>
+        <div class="info-row"><span class="ic">📞</span><div><a href="tel:+4921956177099"><strong>+49 2195 677099</strong></a></div></div>
+        <div class="info-row"><span class="ic">🥡</span><div>Alle Speisen auch zum Mitnehmen<br><span class="info-highlight">10% Rabatt bei Selbstabholung</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SPEISEKARTE -->
+  <div id="view-menu" class="view">
+    <div class="menu-header">
+      <h1>Unsere Speisekarte</h1>
+      <p>Modern-regional, saisonal, mit vegetarischer Auswahl</p>
+    </div>
+    <div class="menu-tabs" id="menu-tabs"></div>
+    <div id="menu-categories"><div class="skeleton" style="height:200px;margin:var(--space-4)"></div></div>
   </div>
 
   <!-- COUPONS -->
   <div id="view-coupons" class="view">
-    <div class="app-header plain"><div class="brand-row"><div class="brand">Coupons</div><div class="sub">Ihre aktuellen Vorteile</div></div></div>
-    <div style="padding: var(--space-4)" id="coupons-list">
-      <div class="skeleton" style="height:80px;margin-bottom:12px"></div>
-    </div>
+    <div class="personal-header"><h1>Deine Coupons</h1><p>Aktivieren und beim Bezahlen zeigen</p></div>
+    <div class="personal-body" id="coupons-list"></div>
   </div>
 
-  <!-- PUNKTE / PRÄMIEN -->
-  <div id="view-points" class="view">
-    <div class="app-header plain"><div class="brand-row"><div class="brand">Punkte &amp; Prämien</div><div class="sub">Sammeln und einlösen</div></div></div>
-    <div style="padding: var(--space-4)">
-      <div class="section-title" style="margin-top:0">Verfügbare Prämien</div>
-      <div id="rewards-list"><div class="skeleton" style="height:60px;margin-bottom:12px"></div></div>
-      <div class="section-title">Letzte Aktivitäten</div>
-      <div class="card" id="txn-list"><div class="skeleton" style="height:100px"></div></div>
+  <!-- PRÄMIEN -->
+  <div id="view-rewards" class="view">
+    <div class="personal-header"><h1>Deine Prämien</h1><p id="rewards-sub">Punkte sammeln und einlösen</p></div>
+    <div class="personal-body">
+      <div id="rewards-list"></div>
+      <div class="section-title" style="margin-top:var(--space-5)">Letzte Aktivitäten</div>
+      <div class="card" id="txn-list"></div>
     </div>
   </div>
 
   <!-- QR / KUNDENKARTE -->
   <div id="view-qr" class="view">
-    <div class="app-header plain"><div class="brand-row"><div class="brand">Kundenkarte</div><div class="sub">An der Theke vorzeigen</div></div></div>
-    <div class="qr-wrap">
+    <div class="personal-header"><h1>Deine Karte</h1><p>Beim Bezahlen einfach zeigen</p></div>
+    <div class="qr-wrap" id="qr-content">
       <div class="qr-box"><canvas id="qrcode-canvas"></canvas></div>
       <div class="qr-name" id="qr-name">—</div>
-      <div class="qr-hint">Personal scannt diesen Code zum Punkte sammeln und Coupon einlösen.</div>
-      <div class="qr-secure-note">Der Code wird regelmäßig erneuert und ist nicht beliebig übertragbar.</div>
+      <div class="qr-hint">Das Personal scannt diesen Code und schreibt deine Punkte gut.</div>
+      <div class="qr-secure-note">Der Code wird regelmäßig erneuert und ist nicht übertragbar.</div>
     </div>
   </div>
 
   <!-- PROFIL -->
   <div id="view-profile" class="view">
-    <div class="app-header plain"><div class="brand-row"><div class="brand">Profil</div><div class="sub">Ihre Daten &amp; Einstellungen</div></div></div>
-    <div style="padding: var(--space-4)">
+    <div class="personal-header"><h1>Dein Profil</h1><p>Daten &amp; Einstellungen</p></div>
+    <div class="personal-body">
       <div class="card">
         <div class="profile-row"><span>Name</span><span id="profile-name" style="font-weight:600">—</span></div>
         <div class="profile-row"><span>E-Mail</span><span id="profile-email" style="font-weight:600">—</span></div>
@@ -208,16 +313,29 @@
   </div>
 
   <!-- BOTTOM NAV -->
-  <nav class="bottom-nav" id="bottom-nav" style="display:none">
+  <nav class="bottom-nav" id="bottom-nav">
     <button class="nav-item active" data-view="start"><span class="ic">🏠</span><span>Start</span></button>
+    <button class="nav-item" data-view="menu"><span class="ic">📖</span><span>Speisekarte</span></button>
     <button class="nav-item" data-view="coupons"><span class="ic">🎟️</span><span>Coupons</span></button>
-    <button class="nav-item" data-view="points"><span class="ic">⭐</span><span>Punkte</span></button>
+    <button class="nav-item" data-view="rewards"><span class="ic">⭐</span><span>Prämien</span></button>
     <button class="nav-item" data-view="qr"><span class="ic">📇</span><span>Karte</span></button>
-    <button class="nav-item" data-view="profile"><span class="ic">👤</span><span>Profil</span></button>
   </nav>
 
   <div class="toast" id="toast"></div>
 </main>
+
+<!-- LOGIN SHEET -->
+<div class="login-sheet-backdrop" id="login-backdrop"></div>
+<div class="login-sheet hidden" id="login-sheet" style="display:none">
+  <div class="sheet-handle"></div>
+  <h2 id="auth-title" style="margin:0 0 18px;font-family:var(--font-display)">Anmelden</h2>
+  <div class="field"><label for="auth-email">E-Mail</label><input type="email" id="auth-email" aria-label="E-Mail" autocomplete="email"></div>
+  <div class="field"><label for="auth-password">Passwort</label><input type="password" id="auth-password" aria-label="Passwort" autocomplete="current-password"></div>
+  <div class="field" id="auth-name-field" style="display:none"><label for="auth-name">Name</label><input type="text" id="auth-name" aria-label="Name"></div>
+  <button class="btn btn-primary btn-full" id="auth-submit">Anmelden</button>
+  <div class="auth-switch">Noch kein Konto? <a href="#" id="auth-toggle-mode">Jetzt registrieren</a></div>
+  <button class="btn btn-outline btn-full" style="margin-top:12px" id="login-sheet-close">Abbrechen</button>
+</div>
 
 <script src="/assets/js/qrcode.min.js"></script>
 <script src="/assets/js/app.js"></script>

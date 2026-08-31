@@ -154,6 +154,7 @@ CREATE TABLE IF NOT EXISTS menu_items (
   allergen_info TEXT,
   vegetarian INTEGER NOT NULL DEFAULT 0,
   seasonal INTEGER NOT NULL DEFAULT 0,
+  image_url TEXT,
   source TEXT,
   last_verified TEXT,
   sort_order INTEGER NOT NULL DEFAULT 0,

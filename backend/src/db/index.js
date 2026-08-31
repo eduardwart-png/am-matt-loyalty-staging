@@ -33,6 +33,12 @@ function query(text, params = []) {
 async function migrate() {
   const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
   await pool.query(schema);
+  // Additive Spalten-Migrationen (idempotent) — für bereits existierende Tabellen aus früheren Deploys,
+  // da CREATE TABLE IF NOT EXISTS keine Spalten zu bestehenden Tabellen hinzufügt.
+  await pool.query(`ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS image_url TEXT`);
+  await pool.query(`ALTER TABLE rewards ADD COLUMN IF NOT EXISTS image_url TEXT`);
+  await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS image_url TEXT`);
+  await pool.query(`ALTER TABLE coupons ADD COLUMN IF NOT EXISTS image_url TEXT`);
 }
 
 module.exports = { pool, query, migrate };

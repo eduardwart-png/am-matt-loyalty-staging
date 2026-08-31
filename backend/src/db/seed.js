@@ -33,6 +33,15 @@ async function seedMenu() {
   const { rows } = await query(`SELECT COUNT(*) as n FROM menu_categories WHERE tenant_id = 'TENANT_001'`);
   if (Number(rows[0].n) > 0) return;
 
+  const dishImages = {
+    'Rumpsteak „Madagaskar\"': '/assets/img/dish-rumpsteak.jpg',
+    'Zwiebel-Rumpsteak': '/assets/img/dish-rumpsteak.jpg',
+    '8 gegrillte Gambas': '/assets/img/dish-gambas.jpg',
+    '5 gegrillte Gambas': '/assets/img/dish-gambas.jpg',
+    'Gambas': '/assets/img/dish-gambas.jpg',
+    'Baklava': '/assets/img/dish-baklava.jpg',
+  };
+
   const categories = [
     { name: 'Vorspeisen', items: [
       ['Bruschetta', 'mit Tomaten, Parmesan, Knoblauch & Oliven', 9.90, 1],
@@ -107,10 +116,11 @@ async function seedMenu() {
     const catId = catInsert.rows[0].id;
     for (let itemIdx = 0; itemIdx < cat.items.length; itemIdx++) {
       const [name, description, price, vegetarian] = cat.items[itemIdx];
+      const imageUrl = dishImages[name] || null;
       await query(`
-        INSERT INTO menu_items (tenant_id, category_id, name, description, price, vegetarian, seasonal, source, last_verified, sort_order, status)
-        VALUES ('TENANT_001', $1, $2, $3, $4, $5, 0, 'am-matt.com/menue Live-Scan', '2026-08-31', $6, 'verified')
-      `, [catId, name, description, price, vegetarian, itemIdx]);
+        INSERT INTO menu_items (tenant_id, category_id, name, description, price, vegetarian, seasonal, image_url, source, last_verified, sort_order, status)
+        VALUES ('TENANT_001', $1, $2, $3, $4, $5, 0, $6, 'am-matt.com/menue Live-Scan', '2026-08-31', $7, 'verified')
+      `, [catId, name, description, price, vegetarian, imageUrl, itemIdx]);
     }
   }
   console.log('Speisekarte geseedet (real verifizierte Daten).');
@@ -123,7 +133,7 @@ async function seedDemoCustomer() {
   const qrToken = randomToken(16);
   const insert = await query(`
     INSERT INTO customers (tenant_id, email, display_name, password_hash, password_salt, birthday, qr_code_token, points_balance)
-    VALUES ('TENANT_001', 'demo@am-matt.example', 'Demo Kunde', $1, $2, '1990-05-15', $3, 0) RETURNING id
+    VALUES ('TENANT_001', 'demo@am-matt.example', 'Anna Schmitz', $1, $2, '1990-05-15', $3, 0) RETURNING id
   `, [hash, salt, qrToken]);
   const customerId = insert.rows[0].id;
   await query(`
@@ -138,10 +148,18 @@ async function seedDemoReward() {
   const { rows } = await query(`SELECT COUNT(*) as n FROM rewards WHERE tenant_id = 'TENANT_001'`);
   if (Number(rows[0].n) > 0) return;
   await query(`
-    INSERT INTO rewards (tenant_id, title, description, points_cost, active)
-    VALUES ('TENANT_001', 'Gratis Dessert', 'Ein Dessert nach Wahl gratis (DEMO LOYALTY DATA)', 600, 1)
+    INSERT INTO rewards (tenant_id, title, description, points_cost, active, image_url)
+    VALUES ('TENANT_001', 'Espresso oder Kaffee', 'Ein Heißgetränk nach Wahl auf uns.', 50, 1, '/assets/img/reward-espresso.jpg')
   `);
-  console.log('Demo-Prämie angelegt (600 Punkte).');
+  await query(`
+    INSERT INTO rewards (tenant_id, title, description, points_cost, active, image_url)
+    VALUES ('TENANT_001', 'Dessert des Hauses', 'Baklava, Eis oder Pfannkuchen — deine Wahl.', 100, 1, '/assets/img/dish-baklava.jpg')
+  `);
+  await query(`
+    INSERT INTO rewards (tenant_id, title, description, points_cost, active, image_url)
+    VALUES ('TENANT_001', 'Hauptgericht gratis', 'Ein Hauptgericht deiner Wahl bei deinem nächsten Besuch.', 600, 1, '/assets/img/dish-rumpsteak.jpg')
+  `);
+  console.log('Prämien angelegt (50 / 100 / 600 Punkte).');
 }
 
 async function seedStaffAndAdmin() {
@@ -159,19 +177,41 @@ async function seedStaffAndAdmin() {
   }
 }
 
+async function seedDemoCoupon() {
+  const { rows } = await query(`SELECT id FROM coupons WHERE tenant_id = 'TENANT_001' AND code = 'WILLKOMMEN10'`);
+  if (rows[0]) return;
+  const now = new Date();
+  const in60days = new Date(now.getTime() + 60 * 24 * 3600 * 1000);
+  await query(`
+    INSERT INTO coupons (tenant_id, code, title, description, image_url, discount_type, discount_value,
+      valid_from, valid_until, target_segment, max_uses_per_customer, status)
+    VALUES ('TENANT_001', 'WILLKOMMEN10', $1, $2, $3, 'percent', 10, $4, $5, 'all', 1, 'live')
+  `, ['10% auf deine Rechnung',
+      'Als Dankeschön für deine Treue: 10% Rabatt auf deinen nächsten Besuch.',
+      '/assets/img/dish-schnitzel.jpg', now, in60days]);
+  console.log('Coupon WILLKOMMEN10 angelegt (10%, live).');
+}
+
 async function seedDemoCampaign() {
   const { rows } = await query(`SELECT COUNT(*) as n FROM campaigns WHERE tenant_id = 'TENANT_001'`);
   if (Number(rows[0].n) > 0) return;
   const now = new Date();
   const in30days = new Date(now.getTime() + 30 * 24 * 3600 * 1000);
   await query(`
-    INSERT INTO campaigns (tenant_id, title, description, campaign_type, target_segment, start_at, end_at,
+    INSERT INTO campaigns (tenant_id, title, description, image_url, campaign_type, target_segment, start_at, end_at,
       points_bonus, visibility, status, created_by)
-    VALUES ('TENANT_001', $1, $2, 'weekly', 'all', $3, $4, 0, 'app', 'live', 'seed_script')
+    VALUES ('TENANT_001', $1, $2, $3, 'weekly', 'all', $4, $5, 0, 'app', 'live', 'seed_script')
   `, ['Mittagsangebot der Woche',
-      'Aktuelle Mittagsangebote — Preise und Gerichte laut Website, real verifiziert (Stand 31.08.2026).',
-      now, in30days]);
-  console.log('Demo-Kampagne "Mittagsangebot der Woche" angelegt (live, 30 Tage).');
+      'Täglich wechselnde Mittagsgerichte — frisch, regional, zum fairen Preis. Auch zum Mitnehmen.',
+      '/assets/img/dish-schnitzel.jpg', now, in30days]);
+  await query(`
+    INSERT INTO campaigns (tenant_id, title, description, image_url, campaign_type, target_segment, start_at, end_at,
+      points_bonus, visibility, status, created_by)
+    VALUES ('TENANT_001', $1, $2, $3, 'seasonal', 'all', $4, $5, 0, 'app', 'live', 'seed_script')
+  `, ['Spargelzeit im Am-Matt',
+      'Frischer Spargel aus der Region — cremig mit Sauce Hollandaise, klassisch mit Schinken oder vegetarisch.',
+      '/assets/img/dish-spargel.jpg', now, in30days]);
+  console.log('Kampagnen angelegt: Mittagsangebot + Saisonale Spargelzeit (live).');
 }
 
 async function main(closePool = true) {
@@ -182,6 +222,7 @@ async function main(closePool = true) {
   await seedDemoCustomer();
   await seedDemoReward();
   await seedStaffAndAdmin();
+  await seedDemoCoupon();
   await seedDemoCampaign();
   console.log('\n--- SEED ABGESCHLOSSEN ---');
   console.log('Demo-Kunde: demo@am-matt.example / demo1234');
