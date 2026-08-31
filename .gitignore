@@ -2,3 +2,5 @@ node_modules/
 backend/data/*.db
 docs/lighthouse-*.json
 .DS_Store
+menu_check*.png
+menu_screenshot.js
