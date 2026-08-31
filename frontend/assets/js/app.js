@@ -295,16 +295,14 @@ async function loadMenu() {
   try {
     const categories = await getMenu();
     const tabs = document.getElementById('menu-tabs');
-    const CATEGORY_SCROLL_OFFSET = tabs.offsetHeight + 74; // Fixe Topbar + Tabs-Leiste — identisch fuer Klick-Sprung UND Scroll-Spy-Messlinie
     tabs.innerHTML = categories.map((c, i) => `<button class="menu-chip ${i === 0 ? 'active' : ''}" data-cat="${c.id}">${escapeHtml(c.name)}</button>`).join('');
     const catEl = document.getElementById('menu-categories');
-    catEl.innerHTML = categories.map(c => {
+    catEl.innerHTML = categories.map((c, i) => {
       const withImg = c.items.filter(i => i.image_url);
       const highlights = withImg.slice(0, 2);
       const rest = c.items.filter(i => !highlights.includes(i));
       return `
-      <div class="menu-category" id="menu-cat-${c.id}">
-        <h2>${escapeHtml(c.name)}</h2>
+      <div class="menu-category ${i === 0 ? 'active' : ''}" id="menu-cat-${c.id}">
         ${highlights.length ? `<div class="menu-highlight-row ${highlights.length > 1 ? 'two' : ''}">${highlights.map(h => `
           <div class="menu-highlight">
             <div class="photo dim strong"><img src="${escapeHtml(h.image_url)}" alt=""></div>
@@ -328,16 +326,29 @@ async function loadMenu() {
     `;
     }).join('');
 
-    tabs.querySelectorAll('.menu-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        tabs.querySelectorAll('.menu-chip').forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        const target = document.getElementById('menu-cat-' + chip.dataset.cat);
-        if (target) {
-          const top = target.getBoundingClientRect().top + window.scrollY - CATEGORY_SCROLL_OFFSET;
-          window.scrollTo({ top, behavior: 'smooth' });
+    // Echtes Tab-Switching: Klick zeigt NUR die gewaehlte Kategorie, alle anderen werden ausgeblendet.
+    // Kein Scroll-Sprung durch eine lange Gesamtliste mehr (Eddy-Korrektur 31.08.: "nicht untereinander,
+    // sondern anwaehlen -> nur diese Kategorie darunter sichtbar").
+    function selectCategory(catId) {
+      tabs.querySelectorAll('.menu-chip').forEach(c => c.classList.toggle('active', c.dataset.cat === catId));
+      catEl.querySelectorAll('.menu-category').forEach(sec => sec.classList.toggle('active', sec.id === 'menu-cat-' + catId));
+      const activeChip = tabs.querySelector('.menu-chip.active');
+      if (activeChip) {
+        const chipLeft = activeChip.offsetLeft;
+        const chipRight = chipLeft + activeChip.offsetWidth;
+        const visibleLeft = tabs.scrollLeft;
+        const visibleRight = visibleLeft + tabs.clientWidth;
+        if (chipLeft < visibleLeft || chipRight > visibleRight) {
+          tabs.scrollTo({ left: chipLeft - tabs.clientWidth / 2 + activeChip.offsetWidth / 2, behavior: 'smooth' });
         }
-      });
+      }
+      document.getElementById('menu-categories').scrollIntoView({ behavior: 'instant', block: 'start' });
+      // Sichtbarer Bereich beginnt direkt unter der fixen Tab-Leiste, nicht ganz oben am Fensterrand.
+      window.scrollBy(0, -(tabs.offsetHeight + 66));
+    }
+
+    tabs.querySelectorAll('.menu-chip').forEach(chip => {
+      chip.addEventListener('click', () => selectCategory(chip.dataset.cat));
     });
 
     // Scroll-Pfeil: nur zeigen, solange die Tab-Leiste noch weiter nach rechts scrollbar ist
@@ -348,36 +359,6 @@ async function loadMenu() {
     }
     updateTabsEndState();
     tabs.addEventListener('scroll', updateTabsEndState, { passive: true });
-
-    // Scroll-Spy: aktiver Tab folgt der sichtbaren Kategorie beim Scrollen
-    const catSections = categories.map(c => document.getElementById('menu-cat-' + c.id)).filter(Boolean);
-    function updateActiveTabOnScroll() {
-      menuSpyTicking = false;
-      const probeY = CATEGORY_SCROLL_OFFSET + 1;
-      let current = catSections[0];
-      for (const sec of catSections) {
-        if (sec.getBoundingClientRect().top - probeY <= 0) current = sec;
-      }
-      if (!current) return;
-      const catId = current.id.replace('menu-cat-', '');
-      tabs.querySelectorAll('.menu-chip').forEach(c => c.classList.toggle('active', c.dataset.cat === catId));
-      const activeChip = tabs.querySelector('.menu-chip.active');
-      if (activeChip) {
-        // Nur horizontal scrollen (scrollIntoView zieht in manchen Browsern auch das Fenster vertikal mit,
-        // was den gerade ausgefuehrten Kategorie-Sprung sofort wieder zurueckreisst — Bug-Root-Cause).
-        const chipLeft = activeChip.offsetLeft;
-        const chipRight = chipLeft + activeChip.offsetWidth;
-        const visibleLeft = tabs.scrollLeft;
-        const visibleRight = visibleLeft + tabs.clientWidth;
-        if (chipLeft < visibleLeft || chipRight > visibleRight) {
-          tabs.scrollTo({ left: chipLeft - tabs.clientWidth / 2 + activeChip.offsetWidth / 2, behavior: 'smooth' });
-        }
-      }
-    }
-    menuScrollSpyFn = () => {
-      if (!document.getElementById('view-menu').classList.contains('active')) return;
-      if (!menuSpyTicking) { menuSpyTicking = true; requestAnimationFrame(updateActiveTabOnScroll); }
-    };
   } catch (e) {
     document.getElementById('menu-categories').innerHTML = `<div class="empty-state">Speisekarte konnte nicht geladen werden.</div>`;
   }
