@@ -1,28 +1,32 @@
-/* design-tokens.css — Am-Matt Design System v4 (fixiertes Farbsystem, verbindlich)
-   Kein freies Farb-Interpretieren mehr: DARK/LIGHT/SURFACE/ACCENT/WOOD/DEEP exakt wie vorgegeben. */
+/* design-tokens.css — Am-Matt Design System v5 (Dark-First, Enterprise-Anspruch)
+   Grund für Wechsel: Ein heller Beige-Hintergrund erschlägt die warme, moody Fotografie
+   und wirkt trotz Messing-Akzenten nicht exklusiv. Premium-Gastro-/Hospitality-Apps
+   (Soho House, Resy, gehobene Boutique-Hotels) sind fast immer dunkel — das lässt Fotos,
+   Gold-Akzente und Typografie atmen statt zu konkurrieren. */
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap');
 
 :root {
-  --am-matt-dark: #20211F;         /* warmes Graphit/Anthrazit */
-  --am-matt-light: #F4F0E8;        /* warmes Stein-/Elfenbein */
-  --am-matt-surface: #E8E0D4;      /* warmer Naturton */
-  --am-matt-accent: #B4864A;       /* zurückhaltendes Messing/Gold — sparsam! */
-  --am-matt-wood: #73543B;         /* warmer Holzton */
-  --am-matt-deep: #29322D;         /* sehr dunkles Waldgrün — nur punktuell */
-  --am-matt-surface-card: #FFFFFF;
-  --am-matt-text: #201F1B;
-  --am-matt-text-muted: #6B6459;
-  --am-matt-border: #DCD2BF;
-  --am-matt-success: #3E6B4A;
-  --am-matt-danger: #9C3B2E;
-  /* Legacy-Aliase für Staff/Admin-Tools (interne Backoffice-Screens, nicht Teil des Customer-Redesigns) */
-  --am-matt-primary: var(--am-matt-dark);
-  --am-matt-primary-dark: var(--am-matt-dark);
-  --am-matt-bg: var(--am-matt-light);
-  --am-matt-accent-legacy: var(--am-matt-accent);
+  --am-matt-dark: #171511;         /* warmes Nachtschwarz statt neutralem Grau */
+  --am-matt-surface: #211D17;      /* Karten-/Sektionsfläche, leicht heller */
+  --am-matt-surface-2: #2B251C;    /* zusätzliche Elevation (Sheets, Inputs) */
+  --am-matt-light: #F2ECDF;        /* warmes Off-White für Text auf Dunkel */
+  --am-matt-accent: #C9A24D;       /* Messing/Gold — jetzt auf Dunkel abgestimmt, bewusst eingesetzt */
+  --am-matt-accent-dim: #8A7241;   /* gedämpfte Variante für sekundäre Akzente */
+  --am-matt-wood: #8B6B45;
+  --am-matt-deep: #29322D;
+  --am-matt-surface-card: #211D17;
+  --am-matt-text: #F2ECDF;
+  --am-matt-text-muted: #A79A85;
+  --am-matt-border: rgba(242,236,223,0.10);
+  --am-matt-success: #7BAF8A;
+  --am-matt-danger: #D08571;
+  /* Legacy-Aliase für Staff/Admin (bleiben hell, interne Backoffice-Tools) */
+  --am-matt-bg: #F4F0E8;
+  --am-matt-primary: #171511;
+  --am-matt-primary-dark: #171511;
   --radius-sm: 6px;
   --radius-md: 10px;
-  --radius-lg: 12px;
+  --radius-lg: 14px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -32,8 +36,8 @@
   --space-7: 48px;
   --font-display: 'Barlow Condensed', Arial, sans-serif;
   --font-body: 'Barlow', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --shadow-card: 0 2px 10px rgba(32, 33, 31, 0.08);
-  --shadow-elevated: 0 10px 28px rgba(32, 33, 31, 0.22);
+  --shadow-card: 0 2px 14px rgba(0,0,0,0.35);
+  --shadow-elevated: 0 16px 40px rgba(0,0,0,0.5);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
 }
@@ -42,7 +46,7 @@
 html, body { margin: 0; padding: 0; }
 body {
   font-family: var(--font-body);
-  background: var(--am-matt-light);
+  background: var(--am-matt-dark);
   color: var(--am-matt-text);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
@@ -58,7 +62,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 img { max-width: 100%; display: block; }
 
 .card {
-  background: var(--am-matt-surface-card);
+  background: var(--am-matt-surface);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
   padding: var(--space-4);
@@ -79,17 +83,17 @@ img { max-width: 100%; display: block; }
   transition: transform 0.18s ease, background 0.18s ease;
 }
 .btn:active { transform: scale(0.97); }
-.btn-primary { background: var(--am-matt-dark); color: var(--am-matt-light); }
+.btn-primary { background: var(--am-matt-accent); color: var(--am-matt-dark); }
 .btn-accent { background: var(--am-matt-accent); color: var(--am-matt-dark); }
 .btn-outline { background: transparent; border: 1.5px solid var(--am-matt-border); color: var(--am-matt-text); }
 .btn-full { width: 100%; }
-.btn[disabled] { background: #DCD5C6; color: #928A7A; cursor: not-allowed; }
+.btn[disabled] { background: #3A3226; color: #786E5C; cursor: not-allowed; }
 
 .pill { display: inline-block; padding: 4px 10px; border-radius: var(--radius-sm); font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 0.04em; }
-.pill-veg { background: #E1EBE3; color: var(--am-matt-success); }
+.pill-veg { background: rgba(123,175,138,0.16); color: var(--am-matt-success); }
 
 .skeleton {
-  background: linear-gradient(90deg, var(--am-matt-surface) 25%, var(--am-matt-light) 50%, var(--am-matt-surface) 75%);
+  background: linear-gradient(90deg, var(--am-matt-surface) 25%, var(--am-matt-surface-2) 50%, var(--am-matt-surface) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
   border-radius: var(--radius-sm);
@@ -101,13 +105,13 @@ img { max-width: 100%; display: block; }
   bottom: calc(96px + var(--safe-bottom));
   left: 50%;
   transform: translateX(-50%) translateY(20px);
-  background: var(--am-matt-dark);
-  color: var(--am-matt-light);
+  background: var(--am-matt-accent);
+  color: var(--am-matt-dark);
   padding: 13px 22px;
   border-radius: var(--radius-sm);
   font-family: var(--font-body);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   box-shadow: var(--shadow-elevated);
   z-index: 1000;
   opacity: 0;
@@ -117,5 +121,5 @@ img { max-width: 100%; display: block; }
   text-align: center;
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-.toast.error { background: var(--am-matt-danger); }
-.toast.success { background: var(--am-matt-success); }
+.toast.error { background: var(--am-matt-danger); color: #2A1410; }
+.toast.success { background: var(--am-matt-success); color: #10251A; }

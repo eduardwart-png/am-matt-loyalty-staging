@@ -364,7 +364,7 @@ async function loadCoupons() {
 
 // --- PRÄMIEN (personal view) ---
 async function loadRewardsView() {
-  document.getElementById('rewards-sub').textContent = state.customer ? `${state.customer.points_balance} Punkte verfügbar` : '';
+  document.getElementById('rewards-sub').textContent = state.customer ? `${state.customer.points_balance} Punkte · 1 € = 1 Punkt` : '1 € = 1 Punkt · sammeln und einlösen';
   try {
     const rewards = await api('/rewards');
     const balance = state.customer ? state.customer.points_balance : 0;
