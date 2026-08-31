@@ -18,7 +18,7 @@ const { chromium } = require('C:/Users/eduar/AppData/Roaming/npm/node_modules/pl
     page.on('pageerror', (err) => errors.push(err.message));
     page.on('console', (msg) => { if (msg.type() === 'error') errors.push(msg.text()); });
 
-    await page.goto('http://localhost:4100/');
+    await page.goto(process.env.STAGING_URL || 'http://localhost:4100/');
     await page.waitForTimeout(500);
 
     // Login

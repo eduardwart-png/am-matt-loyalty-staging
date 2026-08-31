@@ -1,5 +1,6 @@
 // E2E-Test: Vertical Slice 1 + 2 komplett über echten Browser (nicht nur curl)
 const { chromium } = require('C:/Users/eduar/AppData/Roaming/npm/node_modules/playwright');
+const BASE = process.env.STAGING_URL || 'http://localhost:4100';
 
 (async () => {
   const browser = await chromium.launch();
@@ -9,7 +10,7 @@ const { chromium } = require('C:/Users/eduar/AppData/Roaming/npm/node_modules/pl
   // --- STAFF FLOW ---
   {
     const page = await browser.newPage();
-    await page.goto('http://localhost:4100/staff');
+    await page.goto(BASE + '/staff');
     await page.fill('#staff-username', 'personal');
     await page.fill('#staff-password', 'personal1234');
     await page.click('#staff-login-btn');
@@ -19,12 +20,12 @@ const { chromium } = require('C:/Users/eduar/AppData/Roaming/npm/node_modules/pl
     if (!scanViewVisible) allPassed = false;
 
     // Manuelle QR-Eingabe (Demo-Kunde qr_code_token)
-    const meRes = await page.request.post('http://localhost:4100/api/customer/login', {
+    const meRes = await page.request.post(BASE + '/api/customer/login', {
       headers: { 'X-Tenant-Id': 'TENANT_001' },
       data: { email: 'demo@am-matt.example', password: 'demo1234' },
     });
     const meJson = await meRes.json();
-    const meDetail = await page.request.get('http://localhost:4100/api/customer/me', {
+    const meDetail = await page.request.get(BASE + '/api/customer/me', {
       headers: { 'X-Tenant-Id': 'TENANT_001', Authorization: 'Bearer ' + meJson.sessionToken },
     });
     const customer = await meDetail.json();
@@ -46,7 +47,7 @@ const { chromium } = require('C:/Users/eduar/AppData/Roaming/npm/node_modules/pl
   // --- ADMIN FLOW ---
   {
     const page = await browser.newPage();
-    await page.goto('http://localhost:4100/admin');
+    await page.goto(BASE + '/admin');
     await page.fill('#admin-username', 'admin');
     await page.fill('#admin-password', 'admin1234');
     await page.click('#admin-login-btn');
