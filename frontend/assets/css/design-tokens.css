@@ -2,8 +2,10 @@
    Grund für Wechsel: Ein heller Beige-Hintergrund erschlägt die warme, moody Fotografie
    und wirkt trotz Messing-Akzenten nicht exklusiv. Premium-Gastro-/Hospitality-Apps
    (Soho House, Resy, gehobene Boutique-Hotels) sind fast immer dunkel — das lässt Fotos,
-   Gold-Akzente und Typografie atmen statt zu konkurrieren. */
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap');
+   Gold-Akzente und Typografie atmen statt zu konkurrieren.
+   Font-Import bewusst NICHT hier per @import (render-blockierend, kostet einen zusaetzlichen
+   Roundtrip bevor der Font ueberhaupt angefragt wird) — stattdessen als <link preload> im
+   HTML-<head> jeder Seite, siehe Performance-Audit 31.08.2026 (LCP 4.4-4.7s -> Ursachenfix). */
 
 :root {
   --am-matt-dark: #2A2015;         /* warmes dunkles Kaffeebraun statt Nachtschwarz — einladend, nicht Nachtclub */
