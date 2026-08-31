@@ -299,22 +299,23 @@ async function loadMenu() {
     const catEl = document.getElementById('menu-categories');
     catEl.innerHTML = categories.map(c => {
       const withImg = c.items.filter(i => i.image_url);
-      const highlight = withImg[0];
-      const rest = c.items.filter(i => i !== highlight);
+      const highlights = withImg.slice(0, 2);
+      const rest = c.items.filter(i => !highlights.includes(i));
       return `
       <div class="menu-category" id="menu-cat-${c.id}">
         <h2>${escapeHtml(c.name)}</h2>
-        ${highlight ? `
+        ${highlights.length ? `<div class="menu-highlight-row ${highlights.length > 1 ? 'two' : ''}">${highlights.map(h => `
           <div class="menu-highlight">
-            <div class="photo dim"><img src="${escapeHtml(highlight.image_url)}" alt=""></div>
+            <div class="photo dim strong"><img src="${escapeHtml(h.image_url)}" alt=""></div>
             <div class="menu-highlight-content">
-              <div class="menu-highlight-name">${escapeHtml(highlight.name)}</div>
-              <div class="menu-highlight-price">${money(highlight.price)}</div>
+              <div class="menu-highlight-name">${escapeHtml(h.name)}</div>
+              <div class="menu-highlight-price">${money(h.price)}</div>
             </div>
-          </div>` : ''}
+          </div>`).join('')}</div>` : ''}
         ${rest.map(i => `
           <div class="menu-row-wrap">
             <div class="menu-row">
+              ${i.image_url ? `<div class="menu-row-thumb"><img src="${escapeHtml(i.image_url)}" alt=""></div>` : ''}
               <span class="menu-row-name">${escapeHtml(i.name)}${i.vegetarian ? ' 🌱' : ''}</span>
               <span class="menu-row-leader"></span>
               <span class="menu-row-price">${money(i.price)}</span>
