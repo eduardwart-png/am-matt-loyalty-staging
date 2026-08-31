@@ -37,6 +37,8 @@ app.use(express.static(FRONTEND_DIR));
 
 app.get('/staff', (req, res) => res.sendFile(path.join(FRONTEND_DIR, 'staff', 'index.html')));
 app.get('/admin', (req, res) => res.sendFile(path.join(FRONTEND_DIR, 'admin', 'index.html')));
+app.get('/impressum', (req, res) => res.sendFile(path.join(FRONTEND_DIR, 'impressum', 'index.html')));
+app.get('/datenschutz', (req, res) => res.sendFile(path.join(FRONTEND_DIR, 'datenschutz', 'index.html')));
 app.get('/', (req, res) => res.sendFile(path.join(FRONTEND_DIR, 'customer', 'index.html')));
 
 // Zentrales Error-Handling, damit DB-/Async-Fehler nie silent bleiben (Direktive §40 sinngemäß auf API-Ebene)
