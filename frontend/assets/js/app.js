@@ -197,7 +197,7 @@ async function loadStart() {
           <div style="font-size:32px">🎟️</div>
           <div class="coupon-tile-title" style="margin-top:8px">Melde dich an für deine Vorteile</div>
           <div class="coupon-tile-desc">Aktuelle Coupons und Rabatte warten auf dich.</div>
-          <button class="coupon-activate-btn" onclick="document.getElementById('topbar-login-btn').click()">Jetzt anmelden</button>
+          <button class="btn btn-primary btn-full" style="margin-top:14px" onclick="document.getElementById('topbar-login-btn').click()">Jetzt anmelden</button>
         </div>
       </div>`;
   }
@@ -214,12 +214,12 @@ function renderCampaignCards(campaigns) {
   const el = document.getElementById('campaign-card');
   const weekly = campaigns.filter(c => c.campaign_type !== 'seasonal');
   if (!weekly.length) {
-    el.innerHTML = `<div class="feature-card"><img src="/assets/img/dish-schnitzel.jpg" alt=""><div class="feature-body"><div class="feature-eyebrow">Diese Woche</div><div class="feature-title">Schauen Sie bald wieder vorbei</div><div class="feature-desc">Neue Angebote folgen in Kürze.</div></div></div>`;
+    el.innerHTML = `<div class="feature-card"><div class="photo"><img src="/assets/img/dish-schnitzel.jpg" alt=""></div><div class="feature-body"><div class="feature-eyebrow">Diese Woche</div><div class="feature-title">Schauen Sie bald wieder vorbei</div><div class="feature-desc">Neue Angebote folgen in Kürze.</div></div></div>`;
     return;
   }
   el.innerHTML = weekly.map(c => `
     <div class="feature-card">
-      <img src="${escapeHtml(c.image_url || '/assets/img/dish-schnitzel.jpg')}" alt="">
+      <div class="photo"><img src="${escapeHtml(c.image_url || '/assets/img/dish-schnitzel.jpg')}" alt=""></div>
       <div class="feature-body">
         <div class="feature-eyebrow">Diese Woche</div>
         <div class="feature-title">${escapeHtml(c.title)}</div>
@@ -231,14 +231,13 @@ function renderCampaignCards(campaigns) {
 
 function renderSeasonalCard(categories) {
   const seasonalSection = document.getElementById('section-seasonal');
-  // aus Kampagnen holen (bereits geladen über Start-Sequenz), separat abrufen falls nötig
   api('/campaigns/live').then(campaigns => {
     const seasonal = campaigns.find(c => c.campaign_type === 'seasonal');
     if (!seasonal) { seasonalSection.style.display = 'none'; return; }
     seasonalSection.style.display = 'block';
     document.getElementById('seasonal-card').innerHTML = `
       <div class="feature-card">
-        <img src="${escapeHtml(seasonal.image_url || '/assets/img/dish-spargel.jpg')}" alt="">
+        <div class="photo"><img src="${escapeHtml(seasonal.image_url || '/assets/img/dish-spargel.jpg')}" alt=""></div>
         <div class="feature-body">
           <div class="feature-eyebrow">Saison</div>
           <div class="feature-title">${escapeHtml(seasonal.title)}</div>
@@ -251,7 +250,7 @@ function renderSeasonalCard(categories) {
 function renderCouponScroll(container, coupons) {
   container.innerHTML = coupons.map(c => `
     <div class="coupon-tile">
-      <img src="${escapeHtml(c.image_url || '/assets/img/dish-schnitzel.jpg')}" alt="">
+      <div class="photo"><img src="${escapeHtml(c.image_url || '/assets/img/dish-schnitzel.jpg')}" alt=""></div>
       <div class="coupon-tile-body">
         <div class="badge">Verfügbar</div>
         <div class="coupon-tile-title">${escapeHtml(c.title)}</div>
@@ -269,7 +268,7 @@ function renderFoodScroll(categories) {
   const picks = withImages.length ? withImages : categories.flatMap(c => c.items).slice(0, 6);
   el.innerHTML = picks.slice(0, 8).map(i => `
     <div class="food-tile">
-      <img src="${escapeHtml(i.image_url || '/assets/img/dish-schnitzel.jpg')}" alt="">
+      <div class="photo"><img src="${escapeHtml(i.image_url || '/assets/img/dish-schnitzel.jpg')}" alt=""></div>
       <div class="food-tile-body">
         <div class="food-tile-title">${escapeHtml(i.name)}</div>
         <div class="food-tile-price">${i.price != null ? i.price.toFixed(2).replace('.', ',') + ' €' : ''}</div>
@@ -295,7 +294,7 @@ async function loadMenu() {
         <h2>${escapeHtml(c.name)}</h2>
         ${c.items.map(i => `
           <div class="menu-item">
-            ${i.image_url ? `<img src="${escapeHtml(i.image_url)}" alt="">` : `<div class="menu-item-noimg"></div>`}
+            ${i.image_url ? `<div class="photo"><img src="${escapeHtml(i.image_url)}" alt=""></div>` : `<div class="menu-item-noimg"></div>`}
             <div class="menu-item-body">
               <div class="menu-item-name">${escapeHtml(i.name)}${i.vegetarian ? ' 🌱' : ''}</div>
               ${i.description ? `<div class="menu-item-desc">${escapeHtml(i.description)}</div>` : ''}
@@ -330,7 +329,7 @@ async function loadCoupons() {
     }
     list.innerHTML = coupons.map(c => `
       <div class="feature-card">
-        <img src="${escapeHtml(c.image_url || '/assets/img/dish-schnitzel.jpg')}" alt="">
+        <div class="photo"><img src="${escapeHtml(c.image_url || '/assets/img/dish-schnitzel.jpg')}" alt=""></div>
         <div class="feature-body">
           <div class="feature-eyebrow">Verfügbar</div>
           <div class="feature-title">${escapeHtml(c.title)}</div>
@@ -353,9 +352,9 @@ async function loadRewardsView() {
     const balance = state.customer ? state.customer.points_balance : 0;
     document.getElementById('rewards-list').innerHTML = rewards.length ? rewards.map(r => `
       <div class="card reward-card ${r.points_cost > balance ? 'locked' : ''}">
-        ${r.image_url ? `<img src="${escapeHtml(r.image_url)}" alt="">` : ''}
-        <div><div style="font-weight:700;font-size:14.5px">${escapeHtml(r.title)}</div>
-        <div style="font-size:12px;color:var(--am-matt-text-muted)">${escapeHtml(r.description || '')}</div></div>
+        ${r.image_url ? `<div class="photo"><img src="${escapeHtml(r.image_url)}" alt=""></div>` : ''}
+        <div><div class="r-title">${escapeHtml(r.title)}</div>
+        <div class="r-desc">${escapeHtml(r.description || '')}</div></div>
         <div class="cost">${r.points_cost} P</div>
       </div>
     `).join('') : `<div class="empty-state">Noch keine Prämien verfügbar</div>`;

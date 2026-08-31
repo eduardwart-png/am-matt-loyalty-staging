@@ -1,34 +1,35 @@
-/* design-tokens.css — Am-Matt Design System v2 (veredelt nach Referenz-Analyse: Lidl/Payback-Kartenmuster, Renés Am-Matt-Demo-Struktur, echte Am-Matt-Bildsprache) */
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap');
+/* design-tokens.css — Am-Matt Design System v3 (Flaggschiff)
+   Palette aus dem echten Fachwerkhaus-Material abgeleitet: dunkles Eichenholz (Balken),
+   weißer Kalkputz (Fassade), warmes Messing-/Laternenlicht (Abend) — NICHT generisches Gastro-Rot.
+   Typografie: Barlow Condensed (Headlines, große Zahlen, selbstbewusst) + Inter (Fließtext). */
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  /* Warmes bergisches Fachwerkhaus statt kaltem Corporate-Grün: Terrakotta/Wein + Waldgrün + warmes Gold auf cremigem Papierton */
-  --am-matt-primary: #6B2E2E;        /* warmes Weinrot/Terrakotta — Gastro, einladend, nicht Tech */
-  --am-matt-primary-dark: #4A1F1F;
-  --am-matt-forest: #2F4A3C;         /* Waldgrün als Sekundärfarbe (Terrasse/Natur) */
-  --am-matt-accent: #C9962E;         /* warmes Gold — Prämien/Highlights */
-  --am-matt-accent-light: #EBD9A8;
-  --am-matt-bg: #FBF6EC;             /* warmes Creme-Papier statt reinweiß */
-  --am-matt-bg-warm: #F5EBD9;
+  --am-matt-ink: #1B1712;          /* fast schwarz, warmer Unterton wie gealtertes Eichenholz */
+  --am-matt-ink-2: #2A2119;        /* etwas heller, für Verläufe/Cards */
+  --am-matt-brass: #C9A227;        /* Messing/Laternenlicht — Akzent, sparsam einsetzen */
+  --am-matt-brass-soft: #E8CE7A;
+  --am-matt-paper: #F7F2E6;        /* warmer Kalkputz-Creme — Haupt-Hintergrund */
+  --am-matt-paper-2: #EFE6D2;
   --am-matt-surface: #FFFFFF;
-  --am-matt-text: #2B2320;
-  --am-matt-text-muted: #6E6259;
-  --am-matt-border: #E9DCC6;
-  --am-matt-success: #2E7D4F;
-  --am-matt-danger: #A5382E;
-  --radius-sm: 10px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
+  --am-matt-text: #201A13;
+  --am-matt-text-muted: #6B6155;
+  --am-matt-border: #E4DAC4;
+  --am-matt-success: #3E6B4A;
+  --am-matt-danger: #9C3B2E;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
   --space-5: 24px;
   --space-6: 32px;
-  --font-display: 'Fraunces', Georgia, serif;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --shadow-card: 0 4px 16px rgba(75, 43, 30, 0.08);
-  --shadow-elevated: 0 12px 32px rgba(75, 43, 30, 0.18);
+  --font-display: 'Barlow Condensed', Arial, sans-serif;
+  --font-body: 'Barlow', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --shadow-card: 0 4px 16px rgba(27, 23, 18, 0.10);
+  --shadow-elevated: 0 16px 40px rgba(27, 23, 18, 0.28);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
 }
@@ -37,13 +38,18 @@
 html, body { margin: 0; padding: 0; }
 body {
   font-family: var(--font-body);
-  background: var(--am-matt-bg);
+  background: var(--am-matt-paper);
   color: var(--am-matt-text);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
   overscroll-behavior-y: none;
 }
-h1, h2, h3, .display { font-family: var(--font-display); font-weight: 600; }
+h1, h2, h3, .display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
 a { color: inherit; text-decoration: none; }
 button { font-family: inherit; cursor: pointer; border: none; }
 img { max-width: 100%; display: block; }
@@ -62,27 +68,29 @@ img { max-width: 100%; display: block; }
   justify-content: center;
   gap: var(--space-2);
   padding: 15px 20px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-display);
   font-weight: 700;
-  font-size: 15px;
-  letter-spacing: 0.01em;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 .btn:active { transform: scale(0.97); }
-.btn-primary { background: var(--am-matt-primary); color: #FFF5EA; }
-.btn-primary:hover { background: var(--am-matt-primary-dark); }
-.btn-accent { background: var(--am-matt-accent); color: #3A2A0A; }
+.btn-primary { background: var(--am-matt-ink); color: var(--am-matt-paper); }
+.btn-primary:hover { background: var(--am-matt-ink-2); }
+.btn-accent { background: var(--am-matt-brass); color: var(--am-matt-ink); }
 .btn-outline { background: transparent; border: 1.5px solid var(--am-matt-border); color: var(--am-matt-text); }
 .btn-full { width: 100%; }
 .btn[disabled] { background: #E4DCCC; color: #9C927F; cursor: not-allowed; }
 
-.pill { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; }
-.pill-demo { background: #F3E3B8; color: #7A5A0F; }
-.pill-veg { background: #E4F3E7; color: var(--am-matt-success); }
-.pill-live { background: #E4EFE7; color: var(--am-matt-forest); }
+.pill { display: inline-block; padding: 4px 11px; border-radius: 3px; font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.pill-demo { background: var(--am-matt-brass-soft); color: #5C4A0D; }
+.pill-veg { background: #E1EBE3; color: var(--am-matt-success); }
+.pill-live { background: var(--am-matt-ink); color: var(--am-matt-paper); }
 
 .skeleton {
-  background: linear-gradient(90deg, #EFE6D2 25%, #F7F0E1 50%, #EFE6D2 75%);
+  background: linear-gradient(90deg, #EFE6D2 25%, #F7F2E6 50%, #EFE6D2 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
   border-radius: var(--radius-sm);
@@ -94,10 +102,10 @@ img { max-width: 100%; display: block; }
   bottom: calc(96px + var(--safe-bottom));
   left: 50%;
   transform: translateX(-50%) translateY(20px);
-  background: var(--am-matt-primary-dark);
-  color: #FFF5EA;
+  background: var(--am-matt-ink);
+  color: var(--am-matt-paper);
   padding: 13px 22px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 600;
   box-shadow: var(--shadow-elevated);
@@ -110,13 +118,4 @@ img { max-width: 100%; display: block; }
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .toast.error { background: var(--am-matt-danger); }
-.toast.success { background: var(--am-matt-forest); }
-
-/* Demo-Vorschau-Badge (global sichtbar, kein Login nötig für Vorschau-Modus) */
-.preview-badge {
-  position: fixed; top: calc(10px + var(--safe-top)); left: 50%; transform: translateX(-50%);
-  background: var(--am-matt-accent); color: #3A2A0A; font-size: 11px; font-weight: 800;
-  letter-spacing: 0.04em; text-transform: uppercase; padding: 6px 14px; border-radius: 999px;
-  box-shadow: var(--shadow-card); z-index: 2000; display: none;
-}
-.preview-badge.show { display: block; }
+.toast.success { background: var(--am-matt-success); }
