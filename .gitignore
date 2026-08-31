@@ -4,3 +4,4 @@ docs/lighthouse-*.json
 .DS_Store
 menu_check*.png
 menu_screenshot.js
+*.png
