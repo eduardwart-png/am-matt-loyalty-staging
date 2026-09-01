@@ -73,11 +73,25 @@ Body: {"target_tenant_id": "QA_AUTOTEST"}
 Sicherheitsgurt: nur IDs mit Praefix `QA_` erlaubt, alles andere wird mit 400 abgelehnt.
 
 ## Bekannte Stolperfallen (Root-Cause-Historie)
-1. **Rate-Limiter (seit 01.09.) blockiert nach 10 Fehlversuchen/10min pro IP+Tenant+Pfad.**
-   Diagnose-Skripte, die mehrfach hintereinander falsche Logins probieren, sperren sich selbst aus.
-   Bei "429 too_many_attempts" im Playwright-Konsolenlog: KEIN Produktbug, sondern eigener Rate-Limit-Treffer.
+1. **Rate-Limiter (seit 01.09.) blockiert nach 10 Fehlversuchen/10min pro IP+Tenant+Pfad —
+   AUSSER bei Tenants mit Praefix `QA_` (bewusste Ausnahme seit demselben Tag).**
+   Diagnose-Skripte, die mehrfach hintereinander falsche Logins gegen ECHTE Tenants probieren,
+   sperren sich selbst aus. Bei "429 too_many_attempts" im Playwright-Konsolenlog: KEIN Produktbug,
+   sondern eigener Rate-Limit-Treffer gegen einen Nicht-QA-Tenant.
 2. Fehlgeschlagener Login lässt `#login-sheet` (Customer-App) bewusst offen (User soll korrigieren
    können) — das ist gewolltes Verhalten, kein Bug, wenn danach `#login-sheet-close` funktioniert.
 3. Test-Tenant-IDs im DB-Ledger tauchen als `display_name` bzw. via `customer_name`-Join auf,
    nicht als eigenes flaches Feld — beim Scripten von Ledger-Checks das echte JSON-Schema prüfen,
    nicht raten.
+4. **Render Auto-Deploy ist NICHT verlaesslich (bestaetigt 01.09.: 5 Pushes in Folge wurden trotz
+   `autoDeploy=yes` nicht automatisch deployed; `gh api repos/.../hooks` zeigt `[]` — keine
+   klassischen GitHub-Webhooks, Render nutzt die GitHub-App-Integration, die gelegentlich haengt).**
+   `/api/health` liefert seither `commit` (aus `RENDER_GIT_COMMIT`) - IMMER pruefen, dass der
+   erwartete Commit-Hash live ist, bevor man einen Testfehler als Produktbug interpretiert.
+   Workaround bei haengendem Auto-Deploy: `render deploys create srv-daar7p7avr4c73b9hjng --confirm`
+   manuell ausloesen. Der CI-Workflow (`regression-test.yml`) prueft das automatisch und bricht mit
+   klarer Warnung ab, statt gegen veralteten Code falsch-positive Bugs zu melden.
+5. **Fixe `waitForTimeout(N)`-Werte sind grundsaetzlich fragil bei CI-Netzwerklatenz** (mehrfach
+   bestaetigt: Kampagnen-Tabelle, Punktestand, Staff-Login-View). Immer Polling verwenden
+   (`waitForVisible`/`waitForRows`/`waitForNonEmptyText` in den jeweiligen Testdateien), nie eine
+   fixe Sleep-Dauer als "sollte reichen" behandeln.
