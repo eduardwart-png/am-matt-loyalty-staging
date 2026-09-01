@@ -233,28 +233,37 @@ router.post('/backup/restore', async (req, res, next) => {
     if (!tenantCheck.rows[0]) return res.status(404).json({ error: 'target_tenant_not_found_create_first' });
 
     const restored = {};
+    const errors = [];
     const insertOrder = [
       'opening_hours', 'customers', 'staff_users', 'menu_categories', 'menu_items',
       'rewards', 'coupons', 'campaigns', 'loyalty_ledger', 'coupon_redemptions',
       'customer_favorites', 'referrals', 'push_subscriptions',
     ];
+    const { randomToken } = require('../lib/crypto');
     for (const table of insertOrder) {
       const rows = backup.tables[table] || [];
       let count = 0;
       for (const row of rows) {
         const cols = Object.keys(row).filter(k => k !== 'id'); // neue IDs vergeben lassen (SERIAL)
         const overrideRow = { ...row, tenant_id: target_tenant_id };
+        // Global-eindeutige Felder (nicht nur pro Tenant) muessen beim Restore in einen ANDEREN
+        // Tenant neu generiert werden, sonst schlaegt die UNIQUE-Constraint fehl und die Zeile
+        // wird sonst STILL uebersprungen (Direktive §40: keine stillen Fehler).
+        if (table === 'customers' && overrideRow.qr_code_token) overrideRow.qr_code_token = randomToken(16);
+        if (table === 'customers' && overrideRow.referral_code) overrideRow.referral_code = null;
         const finalCols = cols.includes('tenant_id') ? cols : [...cols, 'tenant_id'];
         const values = finalCols.map(c => overrideRow[c]);
         const placeholders = finalCols.map((_, i) => `$${i + 1}`).join(',');
         try {
           await query(`INSERT INTO ${table} (${finalCols.join(',')}) VALUES (${placeholders})`, values);
           count++;
-        } catch (e) { /* einzelne Zeile ueberspringen (z.B. FK-Verweis auf alte ID), Rest fortsetzen */ }
+        } catch (e) {
+          errors.push({ table, row_hint: row.id, error: e.message });
+        }
       }
       restored[table] = count;
     }
-    res.json({ ok: true, target_tenant_id, restored });
+    res.json({ ok: true, target_tenant_id, restored, errors });
   } catch (err) { next(err); }
 });
 
