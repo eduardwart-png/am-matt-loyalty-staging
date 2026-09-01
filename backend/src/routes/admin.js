@@ -195,4 +195,27 @@ router.delete('/customers/test-data', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// --- Backup: vollstaendiger Tenant-Datenexport als JSON (Render Free-Tier-Postgres hat KEINE
+// eingebauten Backups - offiziell bestaetigt via render.com/docs/free). Manueller Ersatz, bis eine
+// kostenpflichtige DB-Stufe mit echten Backups gebucht wird (Owner-Entscheidung).
+router.get('/backup/export', async (req, res, next) => {
+  try {
+    const tables = [
+      'tenants', 'opening_hours', 'customers', 'staff_users', 'loyalty_ledger', 'rewards',
+      'coupons', 'coupon_redemptions', 'campaigns', 'menu_categories', 'menu_items',
+      'customer_favorites', 'referrals', 'push_subscriptions',
+    ];
+    const backup = { exported_at: new Date().toISOString(), tenant_id: req.tenant.id, tables: {} };
+    for (const table of tables) {
+      const { rows } = await query(`SELECT * FROM ${table} WHERE tenant_id = $1`, [req.tenant.id]).catch(async () => {
+        // Fallback fuer Tabellen ohne tenant_id (sollte bei diesem Schema nicht vorkommen, aber sicher ist sicher)
+        return query(`SELECT * FROM ${table}`);
+      });
+      backup.tables[table] = rows;
+    }
+    res.setHeader('Content-Disposition', `attachment; filename="am-matt-backup-${req.tenant.id}-${Date.now()}.json"`);
+    res.json(backup);
+  } catch (err) { next(err); }
+});
+
 module.exports = router;
