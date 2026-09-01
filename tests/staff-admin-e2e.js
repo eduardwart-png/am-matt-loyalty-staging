@@ -1,6 +1,7 @@
 // E2E-Test: Vertical Slice 1 + 2 komplett über echten Browser (nicht nur curl)
 const { chromium } = require('C:/Users/eduar/AppData/Roaming/npm/node_modules/playwright');
 const BASE = process.env.STAGING_URL || 'http://localhost:4100';
+const QA_QUERY = '?tenant=QA_AUTOTEST';
 
 (async () => {
   const browser = await chromium.launch();
@@ -10,7 +11,7 @@ const BASE = process.env.STAGING_URL || 'http://localhost:4100';
   // --- STAFF FLOW ---
   {
     const page = await browser.newPage();
-    await page.goto(BASE + '/staff');
+    await page.goto(BASE + '/staff' + QA_QUERY);
     await page.fill('#staff-username', 'personal');
     await page.fill('#staff-password', 'personal1234');
     await page.click('#staff-login-btn');
@@ -19,14 +20,14 @@ const BASE = process.env.STAGING_URL || 'http://localhost:4100';
     results.push(['Staff Login -> Scan View sichtbar', scanViewVisible]);
     if (!scanViewVisible) allPassed = false;
 
-    // Manuelle QR-Eingabe (Demo-Kunde qr_code_token)
+    // Manuelle QR-Eingabe (QA-Demo-Kunde qr_code_token)
     const meRes = await page.request.post(BASE + '/api/customer/login', {
-      headers: { 'X-Tenant-Id': 'TENANT_001' },
-      data: { email: 'demo@am-matt.example', password: 'demo1234' },
+      headers: { 'X-Tenant-Id': 'QA_AUTOTEST' },
+      data: { email: 'qa-demo@am-matt.example', password: 'demo1234' },
     });
     const meJson = await meRes.json();
     const meDetail = await page.request.get(BASE + '/api/customer/me', {
-      headers: { 'X-Tenant-Id': 'TENANT_001', Authorization: 'Bearer ' + meJson.sessionToken },
+      headers: { 'X-Tenant-Id': 'QA_AUTOTEST', Authorization: 'Bearer ' + meJson.sessionToken },
     });
     const customer = await meDetail.json();
 
@@ -47,7 +48,7 @@ const BASE = process.env.STAGING_URL || 'http://localhost:4100';
   // --- ADMIN FLOW ---
   {
     const page = await browser.newPage();
-    await page.goto(BASE + '/admin');
+    await page.goto(BASE + '/admin' + QA_QUERY);
     await page.fill('#admin-username', 'admin');
     await page.fill('#admin-password', 'admin1234');
     await page.click('#admin-login-btn');

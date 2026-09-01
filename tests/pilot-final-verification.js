@@ -1,7 +1,10 @@
 // FINALE PILOT-VERIFIKATION: kompletter Kundenweg von Null, nichts vorausgesetzt.
 // Simuliert exakt das, was der Pilotkunde/Vorfuehrung erleben wird.
+// Laeuft GEGEN DEN ISOLIERTEN QA-TENANT (QA_AUTOTEST), nicht gegen TENANT_001 - verhindert
+// die frueher wiederholt aufgetretene Testdaten-Kontamination der echten Produktivdaten.
 const { chromium } = require('C:/Users/eduar/AppData/Roaming/npm/node_modules/playwright');
-const BASE = 'https://am-matt-loyalty-staging.onrender.com';
+const BASE = process.env.STAGING_URL || 'https://am-matt-loyalty-staging.onrender.com';
+const QA_QUERY = '?tenant=QA_AUTOTEST';
 
 (async () => {
   const browser = await chromium.launch();
@@ -10,13 +13,24 @@ const BASE = 'https://am-matt-loyalty-staging.onrender.com';
   const check = (name, cond) => { results.push([name, !!cond]); if (!cond) allPass = false; };
   const testEmail = `pilot-final-${Date.now()}@am-matt.example`;
 
+  // === 0. QA-TENANT FRISCH ZURUECKSETZEN (Admin-Login gegen TENANT_001, resettet nur QA_AUTOTEST) ===
+  const adminAuth = await fetch(BASE + '/api/admin/login', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Tenant-Id': 'TENANT_001' },
+    body: JSON.stringify({ username: 'admin', password: 'admin1234' }),
+  }).then(r => r.json());
+  await fetch(BASE + '/api/admin/qa-tenant/reset', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Tenant-Id': 'TENANT_001', Authorization: 'Bearer ' + adminAuth.sessionToken },
+    body: JSON.stringify({ target_tenant_id: 'QA_AUTOTEST' }),
+  });
+
   // === 1. STARTSEITE OHNE LOGIN ===
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   const consoleErrors = [];
   page.on('console', msg => { if (msg.type() === 'error') consoleErrors.push(msg.text()); });
   page.on('pageerror', err => consoleErrors.push('PAGEERROR: ' + err.message));
 
-  await page.goto(BASE + '/', { waitUntil: 'networkidle', timeout: 20000 });
+  await page.goto(BASE + '/' + QA_QUERY, { waitUntil: 'networkidle', timeout: 20000 });
   check('Startseite laedt (networkidle erreicht)', true);
   check('Kein JS-Fehler beim initialen Laden', consoleErrors.length === 0);
 
@@ -91,7 +105,7 @@ const BASE = 'https://am-matt-loyalty-staging.onrender.com';
   // === 7. STAFF SCANNT DEN ECHTEN NEUEN KUNDEN ===
   const staffPage = await browser.newPage();
   staffPage.on('dialog', d => d.accept());
-  await staffPage.goto(BASE + '/staff', { waitUntil: 'networkidle' });
+  await staffPage.goto(BASE + '/staff' + QA_QUERY, { waitUntil: 'networkidle' });
   await staffPage.fill('#staff-username', 'personal');
   await staffPage.fill('#staff-password', 'personal1234');
   await staffPage.click('#staff-login-btn');
@@ -121,7 +135,7 @@ const BASE = 'https://am-matt-loyalty-staging.onrender.com';
 
   // === 10. ADMIN OPERATIONS STUDIO ===
   const adminPage = await browser.newPage();
-  await adminPage.goto(BASE + '/admin', { waitUntil: 'networkidle' });
+  await adminPage.goto(BASE + '/admin' + QA_QUERY, { waitUntil: 'networkidle' });
   await adminPage.fill('#admin-username', 'admin');
   await adminPage.fill('#admin-password', 'admin1234');
   await adminPage.click('#admin-login-btn');

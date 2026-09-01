@@ -1,5 +1,6 @@
 // Automatisierter Cross-Device-Test mit Playwright — testet Mobile Browser App auf 4 Viewports
 const { chromium } = require('C:/Users/eduar/AppData/Roaming/npm/node_modules/playwright');
+const QA_QUERY = '?tenant=QA_AUTOTEST';
 
 (async () => {
   const browser = await chromium.launch();
@@ -19,7 +20,7 @@ const { chromium } = require('C:/Users/eduar/AppData/Roaming/npm/node_modules/pl
     page.on('pageerror', (err) => errors.push(err.message));
     page.on('console', (msg) => { if (msg.type() === 'error') errors.push(msg.text()); });
 
-    await page.goto(process.env.STAGING_URL || 'http://localhost:4100/');
+    await page.goto((process.env.STAGING_URL || 'http://localhost:4100/') + QA_QUERY);
     await page.waitForTimeout(600);
 
     // 1. Öffentlicher Bereich muss OHNE Login sichtbar sein
@@ -37,7 +38,7 @@ const { chromium } = require('C:/Users/eduar/AppData/Roaming/npm/node_modules/pl
     await page.waitForTimeout(300);
     await page.click('#topbar-login-btn');
     await page.waitForTimeout(300);
-    await page.fill('#auth-email', 'demo@am-matt.example');
+    await page.fill('#auth-email', 'qa-demo@am-matt.example');
     await page.fill('#auth-password', 'demo1234');
     await page.click('#auth-submit');
     await page.waitForTimeout(800);
