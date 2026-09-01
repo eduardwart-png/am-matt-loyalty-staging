@@ -20,6 +20,14 @@ async function waitForRows(page, selector, timeoutMs = 6000) {
   }
   return page.locator(selector).count();
 }
+async function waitForVisible(page, selector, timeoutMs = 6000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    if (await page.locator(selector).isVisible().catch(() => false)) return true;
+    await page.waitForTimeout(150);
+  }
+  return false;
+}
 
 (async () => {
   const browser = await chromium.launch();
@@ -33,8 +41,7 @@ async function waitForRows(page, selector, timeoutMs = 6000) {
     await page.fill('#staff-username', 'personal');
     await page.fill('#staff-password', 'personal1234');
     await page.click('#staff-login-btn');
-    await page.waitForTimeout(500);
-    const scanViewVisible = await page.locator('#view-scan').isVisible().catch(() => false);
+    const scanViewVisible = await waitForVisible(page, '#view-scan');
     results.push(['Staff Login -> Scan View sichtbar', scanViewVisible]);
     if (!scanViewVisible) allPassed = false;
 
@@ -52,8 +59,7 @@ async function waitForRows(page, selector, timeoutMs = 6000) {
     await page.fill('#manual-qr', customer.qr_code_token);
     page.on('dialog', (d) => d.accept());
     await page.click('#manual-lookup-btn');
-    await page.waitForTimeout(500);
-    const customerFoundVisible = await page.locator('#customer-found').isVisible().catch(() => false);
+    const customerFoundVisible = await waitForVisible(page, '#customer-found');
     results.push(['Staff findet Kunde via manueller QR-Eingabe', customerFoundVisible]);
     if (!customerFoundVisible) allPassed = false;
 
@@ -70,8 +76,7 @@ async function waitForRows(page, selector, timeoutMs = 6000) {
     await page.fill('#admin-username', 'admin');
     await page.fill('#admin-password', 'admin1234');
     await page.click('#admin-login-btn');
-    await page.waitForTimeout(500);
-    const mainVisible = await page.locator('#view-main').isVisible().catch(() => false);
+    const mainVisible = await waitForVisible(page, '#view-main');
     results.push(['Admin Login -> Operations Studio sichtbar', mainVisible]);
     if (!mainVisible) allPassed = false;
 

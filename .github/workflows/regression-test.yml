@@ -35,7 +35,12 @@ jobs:
             LIVE_COMMIT=$(curl -s https://am-matt-loyalty-staging.onrender.com/api/health | python3 -c "import json,sys; print(json.load(sys.stdin).get('commit',''))" 2>/dev/null || echo "")
             echo "Live-Commit laut /api/health: $LIVE_COMMIT (erwartet Praefix von: $GITHUB_SHA)"
             case "$GITHUB_SHA" in "$LIVE_COMMIT"*) echo "Bestaetigt: exakter Commit ist live."; break ;; esac
-            if [ "$i" = "30" ]; then echo "::error::Render hat diesen Commit nach 5 Minuten NICHT deployed - Auto-Deploy haengt oder Push wurde nicht erkannt."; exit 1; fi
+            if [ "$i" = "30" ]; then
+              echo "::warning::Render Auto-Deploy hat diesen Commit nach 5 Minuten NICHT deployed."
+              echo "::warning::Bekannte Betriebslücke: GitHub-Repo hat KEINE klassischen Webhooks (bestaetigt via 'gh api repos/.../hooks' -> []) - Render nutzt vermutlich die GitHub-App-Integration, die gelegentlich haengt."
+              echo "::warning::Workaround (manuell, bis Owner die Render<->GitHub-App-Verbindung im Dashboard neu autorisiert): render deploys create srv-daar7p7avr4c73b9hjng --confirm"
+              exit 1
+            fi
             sleep 10
           done
 
