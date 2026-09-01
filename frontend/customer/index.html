@@ -111,6 +111,10 @@
   .info-highlight-row { display: flex; justify-content: space-between; align-items: center; padding: var(--space-4) 0; }
   .info-highlight { display: inline-block; padding: 4px 12px; border-radius: var(--radius-sm); background: var(--am-matt-accent); color: var(--am-matt-dark); font-family: var(--font-display); font-size: 12px; font-weight: 700; }
 
+  /* Favoriten-Herz auf Speisekarten-/Favoritenzeilen */
+  .fav-btn { background: none; border: none; font-size: 16px; line-height: 1; color: var(--am-matt-border); cursor: pointer; padding: 4px 0 4px 8px; flex-shrink: 0; transition: color 0.2s, transform 0.15s; }
+  .fav-btn.on { color: var(--am-matt-accent); transform: scale(1.1); }
+
   /* Bottom nav */
   .bottom-nav {
     position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
@@ -347,6 +351,33 @@
     </div>
   </div>
 
+  <!-- FAVORITEN -->
+  <div id="view-favorites" class="view">
+    <div class="personal-header"><h1>Deine Favoriten</h1><p>Gemerkte Lieblingsgerichte</p></div>
+    <div class="personal-body" id="favorites-list"></div>
+  </div>
+
+  <!-- KASSENBON / VERLAUF -->
+  <div id="view-receipts" class="view">
+    <div class="personal-header"><h1>Kassenbon</h1><p>Deine Punkte-Historie im Detail</p></div>
+    <div class="personal-body" id="receipts-list"></div>
+  </div>
+
+  <!-- FREUNDE WERBEN -->
+  <div id="view-referral" class="view">
+    <div class="personal-header"><h1>Freunde werben</h1><p>Beide bekommen einen Bonus</p></div>
+    <div class="personal-body">
+      <div class="member-card">
+        <div class="member-card-brand">Dein Empfehlungscode</div>
+        <div class="member-card-name" id="referral-code-display" style="font-size:32px;letter-spacing:.04em">—</div>
+        <button class="btn btn-outline btn-full" style="margin-top:var(--space-4)" id="referral-copy-btn">Code kopieren</button>
+      </div>
+      <div class="qr-secure-note" id="referral-explainer">Dein Freund gibt den Code bei der Anmeldung ein — ihr bekommt beide Bonuspunkte gutgeschrieben.</div>
+      <div class="section-title" style="margin-top:var(--space-6);margin-bottom:var(--space-3);font-size:22px">Deine Empfehlungen</div>
+      <div id="referral-list"></div>
+    </div>
+  </div>
+
   <!-- QR / KUNDENKARTE -->
   <div id="view-qr" class="view">
     <div class="personal-header"><h1>Deine Karte</h1><p>Beim Bezahlen einfach zeigen</p></div>
@@ -369,6 +400,12 @@
         <div class="info-row"><span class="label">Name</span><span class="value" id="profile-name">—</span></div>
         <div class="info-row"><span class="label">E-Mail</span><span class="value" id="profile-email">—</span></div>
       </div>
+      <div class="section-title" style="margin-top:var(--space-6);margin-bottom:var(--space-3);font-size:22px">Mehr</div>
+      <div class="info-list">
+        <div class="info-row" style="cursor:pointer" data-goto="favorites"><span class="label">Favoriten</span><span class="value">Deine Lieblingsgerichte →</span></div>
+        <div class="info-row" style="cursor:pointer" data-goto="receipts"><span class="label">Kassenbon</span><span class="value">Punkte-Historie →</span></div>
+        <div class="info-row" style="cursor:pointer" data-goto="referral"><span class="label">Freunde werben</span><span class="value">Bonus sichern →</span></div>
+      </div>
       <div class="section-title" style="margin-top:var(--space-6);margin-bottom:var(--space-3);font-size:22px">Einstellungen</div>
       <div class="profile-row"><span>Marketing-Einwilligung</span><button class="toggle" id="toggle-marketing"></button></div>
       <div class="profile-row"><span>Push-Benachrichtigungen</span><button class="toggle" id="toggle-push"></button></div>
@@ -379,6 +416,7 @@
       </div>
     </div>
   </div>
+
 
   <!-- BOTTOM NAV -->
   <nav class="bottom-nav" id="bottom-nav">
@@ -400,6 +438,7 @@
   <div class="field"><label for="auth-email">E-Mail</label><input type="email" id="auth-email" aria-label="E-Mail" autocomplete="email"></div>
   <div class="field"><label for="auth-password">Passwort</label><input type="password" id="auth-password" aria-label="Passwort" autocomplete="current-password"></div>
   <div class="field" id="auth-name-field" style="display:none"><label for="auth-name">Name</label><input type="text" id="auth-name" aria-label="Name"></div>
+  <div class="field" id="auth-referral-field" style="display:none"><label for="auth-referral">Empfehlungscode (optional)</label><input type="text" id="auth-referral" aria-label="Empfehlungscode" placeholder="z.B. ANNAX3F2"></div>
   <button class="btn btn-primary btn-full" id="auth-submit">Anmelden</button>
   <div class="auth-switch">Noch kein Konto? <a href="#" id="auth-toggle-mode">Jetzt registrieren</a></div>
   <button class="btn btn-outline btn-full" style="margin-top:12px" id="login-sheet-close">Abbrechen</button>

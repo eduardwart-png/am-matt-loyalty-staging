@@ -40,6 +40,8 @@ CREATE TABLE IF NOT EXISTS customers (
   points_balance INTEGER NOT NULL DEFAULT 0,
   marketing_consent INTEGER NOT NULL DEFAULT 0,
   push_consent INTEGER NOT NULL DEFAULT 0,
+  referral_code TEXT UNIQUE,
+  birthday_bonus_year INTEGER,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(tenant_id, email)
@@ -159,6 +161,42 @@ CREATE TABLE IF NOT EXISTS menu_items (
   last_verified TEXT,
   sort_order INTEGER NOT NULL DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'verified'
+);
+
+-- Lidl-Plus-Paritaet: Favoriten (Kunde merkt sich Lieblingsgerichte)
+CREATE TABLE IF NOT EXISTS customer_favorites (
+  id SERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  menu_item_id INTEGER NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(customer_id, menu_item_id)
+);
+
+-- Freunde-werben-Programm: Empfehlungscode je Kunde, Bonus fuer beide Seiten
+CREATE TABLE IF NOT EXISTS referrals (
+  id SERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  referrer_customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  referred_customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
+  code TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending', -- pending -> redeemed
+  reward_granted INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  redeemed_at TIMESTAMPTZ,
+  UNIQUE(tenant_id, code)
+);
+
+-- Web Push Subscriptions (echte Browser-Push, kein Fake-Toggle mehr)
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id SERIAL PRIMARY KEY,
+  tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  endpoint TEXT NOT NULL,
+  p256dh TEXT NOT NULL,
+  auth TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(customer_id, endpoint)
 );
 
 CREATE TABLE IF NOT EXISTS job_runs (

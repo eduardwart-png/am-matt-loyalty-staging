@@ -41,7 +41,7 @@ function escapeHtml(str) {
 function money(v) { return v != null ? Number(v).toFixed(2).replace('.', ',') + ' €' : ''; }
 
 // --- NAVIGATION ---
-const PERSONAL_VIEWS = ['coupons', 'rewards', 'qr', 'profile'];
+const PERSONAL_VIEWS = ['coupons', 'rewards', 'qr', 'profile', 'favorites', 'receipts', 'referral'];
 
 function showView(name) {
   if (PERSONAL_VIEWS.includes(name) && !state.token) {
@@ -64,6 +64,9 @@ function showView(name) {
   if (name === 'rewards') loadRewardsView();
   if (name === 'qr') loadQr();
   if (name === 'profile') loadProfile();
+  if (name === 'favorites') loadFavoritesView();
+  if (name === 'receipts') loadReceiptsView();
+  if (name === 'referral') loadReferralView();
 }
 
 document.querySelectorAll('.nav-item').forEach(item => {
@@ -95,6 +98,7 @@ document.getElementById('auth-toggle-mode').addEventListener('click', (e) => {
   document.getElementById('auth-title').textContent = authMode === 'login' ? 'Anmelden' : 'Konto erstellen';
   document.getElementById('auth-submit').textContent = authMode === 'login' ? 'Anmelden' : 'Registrieren';
   document.getElementById('auth-name-field').style.display = authMode === 'register' ? 'block' : 'none';
+  document.getElementById('auth-referral-field').style.display = authMode === 'register' ? 'block' : 'none';
   document.getElementById('auth-toggle-mode').textContent = authMode === 'login' ? 'Jetzt registrieren' : 'Zum Login';
 });
 
@@ -102,16 +106,21 @@ document.getElementById('auth-submit').addEventListener('click', async () => {
   const email = document.getElementById('auth-email').value.trim();
   const password = document.getElementById('auth-password').value;
   const displayName = document.getElementById('auth-name').value.trim();
+  const referralCode = document.getElementById('auth-referral').value.trim();
   if (!email || !password) return showToast('Bitte E-Mail und Passwort eingeben', 'error');
 
   try {
     const path = authMode === 'login' ? '/login' : '/register';
-    const body = authMode === 'login' ? { email, password } : { email, password, displayName };
+    const body = authMode === 'login' ? { email, password } : { email, password, displayName, referralCode: referralCode || undefined };
     const data = await api(path, { method: 'POST', body: JSON.stringify(body) });
     state.token = data.sessionToken;
     localStorage.setItem('am_matt_session', state.token);
     closeLoginSheet();
-    showToast(authMode === 'login' ? 'Willkommen zurück!' : 'Willkommen bei Am-Matt!', 'success');
+    if (data.referral && data.referral.applied) {
+      showToast(`Willkommen bei Am-Matt! +${data.referral.bonusPoints} Punkte für deine Empfehlung`, 'success');
+    } else {
+      showToast(authMode === 'login' ? 'Willkommen zurück!' : 'Willkommen bei Am-Matt!', 'success');
+    }
     await refreshIdentity();
     showView('start');
   } catch (err) {
@@ -318,6 +327,7 @@ async function loadMenu() {
               <span class="menu-row-name">${escapeHtml(i.name)}${i.vegetarian ? ' 🌱' : ''}</span>
               <span class="menu-row-leader"></span>
               <span class="menu-row-price">${money(i.price)}</span>
+              <button class="fav-btn ${state.favoriteIds && state.favoriteIds.has(i.id) ? 'on' : ''}" data-fav-id="${i.id}" aria-label="Favorit" title="Als Favorit merken">♥</button>
             </div>
             ${i.description ? `<span class="menu-row-desc">${escapeHtml(i.description)}</span>` : ''}
           </div>
@@ -349,6 +359,30 @@ async function loadMenu() {
 
     tabs.querySelectorAll('.menu-chip').forEach(chip => {
       chip.addEventListener('click', () => selectCategory(chip.dataset.cat));
+    });
+
+    // Favoriten-Herz: Klick merkt/entfernt sofort (optimistisch), synct mit Backend.
+    if (state.token && !state.favoriteIds) {
+      try {
+        const favs = await api('/favorites');
+        state.favoriteIds = new Set(favs.map(f => f.id));
+        catEl.querySelectorAll('.fav-btn').forEach(btn => {
+          btn.classList.toggle('on', state.favoriteIds.has(Number(btn.dataset.favId)));
+        });
+      } catch (e) { state.favoriteIds = new Set(); }
+    }
+    catEl.querySelectorAll('.fav-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (!state.token) { openLoginSheet(); return; }
+        const id = Number(btn.dataset.favId);
+        const isOn = btn.classList.contains('on');
+        btn.classList.toggle('on', !isOn);
+        try {
+          if (isOn) { await api('/favorites/' + id, { method: 'DELETE' }); state.favoriteIds.delete(id); }
+          else { await api('/favorites/' + id, { method: 'POST' }); state.favoriteIds.add(id); }
+        } catch (err) { btn.classList.toggle('on', isOn); showToast('Favorit konnte nicht gespeichert werden', 'error'); }
+      });
     });
 
     // Scroll-Pfeil: nur zeigen, solange die Tab-Leiste noch weiter nach rechts scrollbar ist
@@ -430,8 +464,123 @@ function formatReason(reason) {
     birthday_bonus: 'Geburtstagsbonus',
     manual_adjustment: 'Gutschrift',
     e2e_test: 'Besuch bestätigt',
+    referral_bonus_referrer: 'Bonus für Empfehlung',
+    referral_bonus_new_customer: 'Willkommensbonus (Empfehlung)',
   };
   return map[reason] || 'Punktebuchung';
+}
+
+// --- FAVORITEN (personal view) ---
+async function loadFavoritesView() {
+  const list = document.getElementById('favorites-list');
+  try {
+    const favs = await api('/favorites');
+    state.favoriteIds = new Set(favs.map(f => f.id));
+    list.innerHTML = favs.length ? favs.map(i => `
+      <div class="menu-row-wrap">
+        <div class="menu-row">
+          ${i.image_url ? `<div class="menu-row-thumb"><img src="${escapeHtml(i.image_url)}" alt=""></div>` : ''}
+          <span class="menu-row-name">${escapeHtml(i.name)}${i.vegetarian ? ' 🌱' : ''}</span>
+          <span class="menu-row-leader"></span>
+          <span class="menu-row-price">${money(i.price)}</span>
+          <button class="fav-btn on" data-fav-id="${i.id}" aria-label="Favorit entfernen">♥</button>
+        </div>
+      </div>
+    `).join('') : `<div class="empty-state">Noch keine Favoriten — merke dir Gerichte in der Speisekarte mit ♥.</div>`;
+    list.querySelectorAll('.fav-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = Number(btn.dataset.favId);
+        try { await api('/favorites/' + id, { method: 'DELETE' }); state.favoriteIds.delete(id); loadFavoritesView(); }
+        catch (e) { showToast('Konnte nicht entfernt werden', 'error'); }
+      });
+    });
+  } catch (err) {
+    if (err.status === 401) return showView('start');
+    list.innerHTML = `<div class="empty-state">Favoriten konnten nicht geladen werden.</div>`;
+  }
+}
+
+// --- KASSENBON / VERLAUF (personal view) ---
+async function loadReceiptsView() {
+  const list = document.getElementById('receipts-list');
+  try {
+    const { receipts } = await api('/receipts?limit=100');
+    list.innerHTML = receipts.length ? receipts.map(t => `
+      <div class="txn-row">
+        <span>${formatReason(t.reason)}<br><small style="opacity:.6">${new Date(t.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</small></span>
+        <span class="txn-value ${t.value >= 0 ? 'positive' : 'negative'}">${t.value >= 0 ? '+' : ''}${t.value}</span>
+      </div>
+    `).join('') : `<div class="empty-state">Noch keine Aktivitäten.</div>`;
+  } catch (err) {
+    if (err.status === 401) return showView('start');
+    list.innerHTML = `<div class="empty-state">Kassenbon konnte nicht geladen werden.</div>`;
+  }
+}
+
+// --- FREUNDE WERBEN (personal view) ---
+async function loadReferralView() {
+  try {
+    const { code, referrals } = await api('/referrals');
+    document.getElementById('referral-code-display').textContent = code || '—';
+    const list = document.getElementById('referral-list');
+    list.innerHTML = referrals.length ? referrals.map(r => `
+      <div class="txn-row">
+        <span>${escapeHtml(r.referred_name || 'Neuer Gast')}</span>
+        <span class="txn-value ${r.status === 'redeemed' ? 'positive' : ''}">${r.status === 'redeemed' ? 'Bonus erhalten' : 'Ausstehend'}</span>
+      </div>
+    `).join('') : `<div class="empty-state">Noch keine Empfehlungen — teile deinen Code!</div>`;
+  } catch (err) {
+    if (err.status === 401) return showView('start');
+  }
+}
+document.getElementById('referral-copy-btn').addEventListener('click', () => {
+  const code = document.getElementById('referral-code-display').textContent;
+  if (!code || code === '—') return;
+  navigator.clipboard.writeText(code).then(() => showToast('Code kopiert!', 'success')).catch(() => showToast('Kopieren nicht möglich', 'error'));
+});
+
+// --- WEB PUSH (echte Browser-Benachrichtigung) ---
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
+async function enablePush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    showToast('Push wird von diesem Browser nicht unterstützt', 'error');
+    return false;
+  }
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') { showToast('Benachrichtigungen wurden nicht erlaubt', 'error'); return false; }
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    const tenantInfo = await fetch(API_BASE + '/tenant-info', { headers: { 'X-Tenant-Id': TENANT_ID } }).then(r => r.json()).catch(() => ({}));
+    const pubKey = tenantInfo.vapid_public_key;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: pubKey ? urlBase64ToUint8Array(pubKey) : undefined,
+    });
+    await api('/push/subscribe', { method: 'POST', body: JSON.stringify(sub.toJSON()) });
+    return true;
+  } catch (e) {
+    console.error('[push] Aktivierung fehlgeschlagen:', e.message);
+    showToast('Push konnte nicht aktiviert werden', 'error');
+    return false;
+  }
+}
+
+async function disablePush() {
+  try {
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.getRegistration('/sw.js');
+      if (reg) {
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) { await api('/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint: sub.endpoint }) }); await sub.unsubscribe(); }
+      }
+    }
+  } catch (e) { console.error('[push] Deaktivierung fehlgeschlagen:', e.message); }
 }
 
 // --- QR / KUNDENKARTE ---
@@ -474,9 +623,18 @@ document.getElementById('toggle-marketing').addEventListener('click', function (
   this.classList.toggle('on');
   showToast('Einstellung gespeichert', 'success');
 });
-document.getElementById('toggle-push').addEventListener('click', function () {
-  this.classList.toggle('on');
-  showToast('Einstellung gespeichert', 'success');
+document.getElementById('toggle-push').addEventListener('click', async function () {
+  const willEnable = !this.classList.contains('on');
+  if (willEnable) {
+    const ok = await enablePush();
+    if (!ok) return;
+    this.classList.add('on');
+    showToast('Push-Benachrichtigungen aktiv', 'success');
+  } else {
+    await disablePush();
+    this.classList.remove('on');
+    showToast('Push-Benachrichtigungen deaktiviert', 'success');
+  }
 });
 
 // --- INIT ---

@@ -39,6 +39,13 @@ async function migrate() {
   await pool.query(`ALTER TABLE rewards ADD COLUMN IF NOT EXISTS image_url TEXT`);
   await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS image_url TEXT`);
   await pool.query(`ALTER TABLE coupons ADD COLUMN IF NOT EXISTS image_url TEXT`);
+  await pool.query(`ALTER TABLE customers ADD COLUMN IF NOT EXISTS referral_code TEXT`);
+  await pool.query(`ALTER TABLE customers ADD COLUMN IF NOT EXISTS birthday_bonus_year INTEGER`);
+  await pool.query(`DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'customers_referral_code_key') THEN
+      ALTER TABLE customers ADD CONSTRAINT customers_referral_code_key UNIQUE (referral_code);
+    END IF;
+  END $$;`);
 }
 
 module.exports = { pool, query, migrate };

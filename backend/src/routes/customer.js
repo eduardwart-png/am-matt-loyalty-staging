@@ -5,6 +5,10 @@ const { hashPassword, verifyPassword, randomToken } = require('../lib/crypto');
 const { createSession, authMiddleware, destroySession } = require('../lib/session');
 const { getBalance, listTransactions } = require('../lib/ledger');
 const { isCouponCurrentlyValid } = require('../lib/coupons');
+const { computeSegment, isVisibleToSegment } = require('../lib/segments');
+const { ensureReferralCode, applyReferralOnSignup, listReferrals } = require('../lib/referrals');
+const { addFavorite, removeFavorite, listFavorites } = require('../lib/favorites');
+const { saveSubscription, removeSubscription } = require('../lib/push');
 
 const router = express.Router();
 
@@ -20,7 +24,7 @@ router.use((req, res, next) => { requireTenant(req, res, next).catch(next); });
 // --- Registrierung ---
 router.post('/register', async (req, res, next) => {
   try {
-    const { email, password, displayName, birthday } = req.body || {};
+    const { email, password, displayName, birthday, referralCode } = req.body || {};
     if (!email || !password) return res.status(400).json({ error: 'email_and_password_required' });
 
     const existing = await query(`SELECT id FROM customers WHERE tenant_id = $1 AND email = $2`, [req.tenant.id, email]);
@@ -33,8 +37,19 @@ router.post('/register', async (req, res, next) => {
       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id
     `, [req.tenant.id, email, displayName || null, hash, salt, birthday || null, qrToken]);
 
-    const token = createSession(req.tenant.id, 'customer', insert.rows[0].id);
-    res.status(201).json({ sessionToken: token, customerId: insert.rows[0].id, qrCodeToken: qrToken });
+    const newCustomerId = insert.rows[0].id;
+    let referralResult = { applied: false };
+    if (referralCode) {
+      try {
+        referralResult = await applyReferralOnSignup(req.tenant.id, newCustomerId, referralCode);
+      } catch (err) { console.error('[register] Empfehlungscode-Einloesung fehlgeschlagen:', err.message); }
+    }
+
+    const token = createSession(req.tenant.id, 'customer', newCustomerId);
+    res.status(201).json({
+      sessionToken: token, customerId: newCustomerId, qrCodeToken: qrToken,
+      referral: referralResult.applied ? { applied: true, bonusPoints: referralResult.referredBonus } : { applied: false }
+    });
   } catch (err) { next(err); }
 });
 
@@ -62,11 +77,15 @@ router.post('/logout', authMiddleware('customer'), (req, res) => {
 router.get('/me', authMiddleware('customer'), async (req, res, next) => {
   try {
     const { rows } = await query(`
-      SELECT id, email, display_name, birthday, points_balance, qr_code_token, marketing_consent, push_consent
+      SELECT id, email, display_name, birthday, points_balance, qr_code_token, marketing_consent, push_consent, referral_code
       FROM customers WHERE id = $1 AND tenant_id = $2
     `, [req.session.subjectId, req.tenant.id]);
     if (!rows[0]) return res.status(404).json({ error: 'not_found' });
-    res.json(rows[0]);
+    const segment = await computeSegment(req.tenant.id, req.session.subjectId);
+    if (!rows[0].referral_code) {
+      rows[0].referral_code = await ensureReferralCode(req.tenant.id, req.session.subjectId);
+    }
+    res.json({ ...rows[0], segment });
   } catch (err) { next(err); }
 });
 
@@ -85,23 +104,37 @@ router.get('/rewards', authMiddleware('customer'), async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// --- Coupons (nur aktuell gültige, für die Startseite/Coupons-Tab) ---
+// --- Coupons (nur aktuell gültige UND fürs Segment sichtbare, für die Startseite/Coupons-Tab) ---
 router.get('/coupons', authMiddleware('customer'), async (req, res, next) => {
   try {
     const { rows } = await query(`SELECT * FROM coupons WHERE tenant_id = $1 AND status = 'live'`, [req.tenant.id]);
-    const valid = rows.filter(c => isCouponCurrentlyValid(c).ok);
+    const segment = await computeSegment(req.tenant.id, req.session.subjectId);
+    const valid = rows.filter(c => isCouponCurrentlyValid(c).ok && isVisibleToSegment(c.target_segment, segment));
     res.json(valid);
   } catch (err) { next(err); }
 });
 
-// --- Aktuelle Kampagnen (Startseite-Widget) ---
+// --- Aktuelle Kampagnen (Startseite-Widget, personalisiert nach Segment) ---
 router.get('/campaigns/live', async (req, res, next) => {
   try {
     const { rows } = await query(`
       SELECT * FROM campaigns WHERE tenant_id = $1 AND status = 'live'
       AND visibility IN ('app','both') ORDER BY start_at DESC
     `, [req.tenant.id]);
-    res.json(rows);
+
+    // Personalisierung nur moeglich mit eingeloggtem Kunden (Session optional pruefen, ohne Pflicht-Login).
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.replace('Bearer ', '');
+    let segment = 'new';
+    if (token) {
+      const { getSession } = require('../lib/session');
+      const session = await getSession(token);
+      if (session && session.subjectType === 'customer' && session.tenantId === req.tenant.id) {
+        segment = await computeSegment(req.tenant.id, session.subjectId);
+      }
+    }
+    const visible = rows.filter(c => isVisibleToSegment(c.target_segment, segment));
+    res.json(visible);
   } catch (err) { next(err); }
 });
 
@@ -131,7 +164,65 @@ router.get('/tenant-info', (req, res) => {
   const { id, name, address_street, address_zip, address_city, phone, email,
     brand_primary_color, brand_accent_color, logo_url } = req.tenant;
   res.json({ id, name, address_street, address_zip, address_city, phone, email,
-    brand_primary_color, brand_accent_color, logo_url });
+    brand_primary_color, brand_accent_color, logo_url, vapid_public_key: process.env.VAPID_PUBLIC_KEY || null });
+});
+
+// --- Digitaler Kassenbon (Lidl-Plus-Paritaet: vollstaendige Punkte-/Bestellhistorie) ---
+router.get('/receipts', authMiddleware('customer'), async (req, res, next) => {
+  try {
+    const limit = Math.min(Number(req.query.limit) || 50, 200);
+    const transactions = await listTransactions(req.tenant.id, req.session.subjectId, limit);
+    res.json({ receipts: transactions });
+  } catch (err) { next(err); }
+});
+
+// --- Favoriten ---
+router.get('/favorites', authMiddleware('customer'), async (req, res, next) => {
+  try {
+    res.json(await listFavorites(req.tenant.id, req.session.subjectId));
+  } catch (err) { next(err); }
+});
+
+router.post('/favorites/:menuItemId', authMiddleware('customer'), async (req, res, next) => {
+  try {
+    const result = await addFavorite(req.tenant.id, req.session.subjectId, Number(req.params.menuItemId));
+    if (!result.ok) return res.status(404).json({ error: result.reason });
+    res.status(201).json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+router.delete('/favorites/:menuItemId', authMiddleware('customer'), async (req, res, next) => {
+  try {
+    await removeFavorite(req.tenant.id, req.session.subjectId, Number(req.params.menuItemId));
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+// --- Freunde werben (Empfehlungsprogramm) ---
+router.get('/referrals', authMiddleware('customer'), async (req, res, next) => {
+  try {
+    const code = await ensureReferralCode(req.tenant.id, req.session.subjectId);
+    const referrals = await listReferrals(req.tenant.id, req.session.subjectId);
+    res.json({ code, referrals });
+  } catch (err) { next(err); }
+});
+
+// --- Web Push Subscription (echte Browser-Benachrichtigung, kein Fake-Toggle) ---
+router.post('/push/subscribe', authMiddleware('customer'), async (req, res, next) => {
+  try {
+    const result = await saveSubscription(req.tenant.id, req.session.subjectId, req.body || {});
+    if (!result.ok) return res.status(400).json({ error: result.reason });
+    res.status(201).json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+router.post('/push/unsubscribe', authMiddleware('customer'), async (req, res, next) => {
+  try {
+    const { endpoint } = req.body || {};
+    if (!endpoint) return res.status(400).json({ error: 'endpoint_required' });
+    await removeSubscription(req.tenant.id, req.session.subjectId, endpoint);
+    res.json({ ok: true });
+  } catch (err) { next(err); }
 });
 
 module.exports = router;
