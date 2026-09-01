@@ -8,6 +8,19 @@ const QA_QUERY = '?tenant=QA_AUTOTEST';
 // Hinweis fuer kuenftige Sessions: QA_TENANT via POST /api/admin/qa-tenant/reset erneuern,
 // bevor die Testsuiten hier gegen ihn laufen - siehe tests/SELECTORS.md Abschnitt "Query-Parameter".
 
+// Root-Cause-Fix (01.09.): fixe waitForTimeout(500) war bei CI-Netzwerklatenz (Render Cold-Path)
+// zu kurz fuer den asynchronen loadCampaigns()-Fetch nach Login - fuehrte zu Flaky-Fail (0 statt 2
+// Kampagnen). Polling statt fixer Sleep behebt die Ursache (Timing), nicht nur das Symptom.
+async function waitForRows(page, selector, timeoutMs = 6000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const n = await page.locator(selector).count();
+    if (n > 0) return n;
+    await page.waitForTimeout(200);
+  }
+  return page.locator(selector).count();
+}
+
 (async () => {
   const browser = await chromium.launch();
   let allPassed = true;
@@ -63,32 +76,28 @@ const QA_QUERY = '?tenant=QA_AUTOTEST';
     if (!mainVisible) allPassed = false;
 
     // Kampagnen-Tab prüfen
-    const campRows = await page.locator('#campaigns-table tbody tr').count();
+    const campRows = await waitForRows(page, '#campaigns-table tbody tr');
     results.push(['Kampagnen-Tabelle zeigt Einträge (' + campRows + ')', campRows > 0]);
     if (campRows === 0) allPassed = false;
 
     // Coupons-Tab
     await page.click('.tab[data-panel="coupons"]');
-    await page.waitForTimeout(400);
-    const couponRows = await page.locator('#coupons-table tbody tr').count();
+    const couponRows = await waitForRows(page, '#coupons-table tbody tr');
     results.push(['Coupons-Tabelle zeigt Einträge (' + couponRows + ')', couponRows > 0]);
 
     // Menü-Tab
     await page.click('.tab[data-panel="menu"]');
-    await page.waitForTimeout(400);
-    const menuRows = await page.locator('#menu-table tbody tr').count();
+    const menuRows = await waitForRows(page, '#menu-table tbody tr');
     results.push(['Speisekarte zeigt Gerichte (' + menuRows + ' Zeilen)', menuRows > 30]);
 
     // Ledger-Tab
     await page.click('.tab[data-panel="ledger"]');
-    await page.waitForTimeout(400);
-    const ledgerRows = await page.locator('#ledger-table tbody tr').count();
+    const ledgerRows = await waitForRows(page, '#ledger-table tbody tr');
     results.push(['Transaktions-Ledger zeigt Einträge (' + ledgerRows + ')', ledgerRows > 0]);
 
     // Jobs-Tab (Scheduler-Transparenz)
     await page.click('.tab[data-panel="jobs"]');
-    await page.waitForTimeout(400);
-    const jobCards = await page.locator('.job-card').count();
+    const jobCards = await waitForRows(page, '.job-card');
     results.push(['Job-Status sichtbar (' + jobCards + ' Jobs)', jobCards > 0]);
 
     await page.close();
