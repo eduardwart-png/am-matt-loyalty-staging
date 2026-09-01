@@ -27,19 +27,12 @@ jobs:
         working-directory: native
         run: npx cap sync ios
 
-      - name: Install CocoaPods dependencies
-        working-directory: native/ios/App
-        run: pod install
-
-      # HINWEIS: Dieser Build ist bewusst NUR fuer den iOS-Simulator (unsigned) — er beweist,
-      # dass das Capacitor/Xcode-Projekt technisch korrekt ist und kompiliert.
-      # Eine auf einem ECHTEN iPhone installierbare Version (TestFlight/Ad-Hoc/App Store)
-      # erfordert zwingend ein kostenpflichtiges Apple Developer Program Konto (99 USD/Jahr)
-      # zur Code-Signierung — das ist eine bewusste Geld-Entscheidung, die Eddy selbst treffen muss.
+      # Capacitor 8 nutzt standardmaessig Swift Package Manager (SPM) statt CocoaPods —
+      # kein Podfile/xcworkspace vorhanden, daher direkt gegen das .xcodeproj bauen.
       - name: Build for iOS Simulator (no code signing required)
         working-directory: native/ios/App
         run: |
-          xcodebuild -workspace App.xcworkspace \
+          xcodebuild -project App.xcodeproj \
             -scheme App \
             -configuration Debug \
             -sdk iphonesimulator \
