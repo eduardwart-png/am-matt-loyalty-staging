@@ -6,7 +6,7 @@ const WINDOW_MS = 10 * 60 * 1000; // 10 Minuten
 const MAX_ATTEMPTS = 10;
 
 function loginRateLimit(req, res, next) {
-  const key = `${req.ip}:${req.headers['x-tenant-id'] || 'default'}`;
+  const key = `${req.ip}:${req.headers['x-tenant-id'] || 'default'}:${req.baseUrl}${req.path}`;
   const now = Date.now();
   const entry = attempts.get(key);
   if (!entry || now - entry.windowStart > WINDOW_MS) {
