@@ -112,6 +112,23 @@ router.post('/coupons', async (req, res, next) => {
   }
 });
 
+router.patch('/coupons/:id', async (req, res, next) => {
+  try {
+    const c = req.body || {};
+    const fields = [];
+    const values = [];
+    let i = 1;
+    for (const key of ['title','description','image_url','discount_type','discount_value',
+      'valid_from','valid_until','max_uses_total','max_uses_per_customer','status']) {
+      if (key in c) { fields.push(`${key} = $${i++}`); values.push(c[key]); }
+    }
+    if (!fields.length) return res.status(400).json({ error: 'no_fields' });
+    values.push(req.params.id, req.tenant.id);
+    await query(`UPDATE coupons SET ${fields.join(', ')} WHERE id = $${i++} AND tenant_id = $${i}`, values);
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
 // --- Transaktionen (Admin sieht Ledger) ---
 router.get('/ledger', async (req, res, next) => {
   try {
