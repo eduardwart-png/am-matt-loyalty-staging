@@ -5,6 +5,27 @@ const { chromium } = (() => {
 })();
 const QA_QUERY = '?tenant=QA_AUTOTEST';
 
+// Root-Cause-Fix (01.09., zweites Auftreten desselben Musters wie im Kampagnen-Bug):
+// fixe waitForTimeout()-Werte reichen bei CI-Netzwerklatenz nicht fuer async Login/Render-Zyklen.
+// Polling statt fixer Sleep behebt die Timing-Ursache, nicht nur das Symptom.
+async function waitForVisible(page, selector, timeoutMs = 6000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    if (await page.locator(selector).isVisible().catch(() => false)) return true;
+    await page.waitForTimeout(150);
+  }
+  return false;
+}
+async function waitForNonEmptyText(page, selector, timeoutMs = 6000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const t = await page.locator(selector).textContent().catch(() => '');
+    if (t && t.trim().length > 0 && t.trim() !== '0' && !t.includes('...')) return t;
+    await page.waitForTimeout(150);
+  }
+  return page.locator(selector).textContent().catch(() => 'N/A');
+}
+
 (async () => {
   const browser = await chromium.launch();
   const viewports = [
@@ -27,27 +48,33 @@ const QA_QUERY = '?tenant=QA_AUTOTEST';
     await page.waitForTimeout(600);
 
     // 1. Öffentlicher Bereich muss OHNE Login sichtbar sein
-    const navVisiblePublic = await page.locator('#bottom-nav').isVisible().catch(() => false);
+    const navVisiblePublic = await waitForVisible(page, '#bottom-nav');
     const heroVisible = await page.locator('.hero-title').isVisible().catch(() => false);
     const loginBtnVisible = await page.locator('#topbar-login-btn').isVisible().catch(() => false);
 
     // 2. Speisekarte öffentlich erreichbar
     await page.click('.nav-item[data-view="menu"]');
-    await page.waitForTimeout(600);
-    const menuItemsCount = await page.locator('.menu-row, .menu-highlight').count().catch(() => 0);
+    const menuItemsCount = await (async () => {
+      const start = Date.now();
+      let n = 0;
+      while (Date.now() - start < 6000) {
+        n = await page.locator('.menu-row, .menu-highlight').count().catch(() => 0);
+        if (n > 0) break;
+        await page.waitForTimeout(150);
+      }
+      return n;
+    })();
 
     // 3. Zurück zu Start, dann Login über Sheet
     await page.click('.nav-item[data-view="start"]');
-    await page.waitForTimeout(300);
     await page.click('#topbar-login-btn');
-    await page.waitForTimeout(300);
+    await waitForVisible(page, '#auth-email');
     await page.fill('#auth-email', 'qa-demo@am-matt.example');
     await page.fill('#auth-password', 'demo1234');
     await page.click('#auth-submit');
-    await page.waitForTimeout(800);
 
-    const avatarVisible = await page.locator('#topbar-avatar-btn').isVisible().catch(() => false);
-    const pointsText = await page.locator('#start-points').textContent().catch(() => 'N/A');
+    const avatarVisible = await waitForVisible(page, '#topbar-avatar-btn');
+    const pointsText = await waitForNonEmptyText(page, '#start-points');
 
     // Scroll-Overflow-Check (keine horizontale Überlappung)
     const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
@@ -59,8 +86,7 @@ const QA_QUERY = '?tenant=QA_AUTOTEST';
     let tabErrors = [];
     for (const tab of tabs) {
       await page.click(`.nav-item[data-view="${tab}"]`);
-      await page.waitForTimeout(400);
-      const viewVisible = await page.locator(`#view-${tab}`).isVisible().catch(() => false);
+      const viewVisible = await waitForVisible(page, `#view-${tab}`);
       if (!viewVisible) tabErrors.push(tab);
     }
 
