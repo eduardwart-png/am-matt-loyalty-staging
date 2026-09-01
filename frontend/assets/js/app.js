@@ -81,11 +81,15 @@ document.getElementById('topbar-avatar-btn').addEventListener('click', () => sho
 let authMode = 'login';
 function openLoginSheet() {
   document.getElementById('login-backdrop').classList.add('show');
-  document.getElementById('login-sheet').style.display = 'block';
+  const sheet = document.getElementById('login-sheet');
+  sheet.style.display = 'block';
+  requestAnimationFrame(() => sheet.classList.add('show'));
 }
 function closeLoginSheet() {
   document.getElementById('login-backdrop').classList.remove('show');
-  document.getElementById('login-sheet').style.display = 'none';
+  const sheet = document.getElementById('login-sheet');
+  sheet.classList.remove('show');
+  setTimeout(() => { sheet.style.display = 'none'; }, 300);
 }
 document.getElementById('topbar-login-btn').addEventListener('click', openLoginSheet);
 document.getElementById('login-backdrop').addEventListener('click', closeLoginSheet);
@@ -180,7 +184,7 @@ async function loadStart() {
       else if (rewards.length) goal = rewards[0].points_cost;
     } catch (e) {}
     const pct = Math.min(100, Math.round((state.customer.points_balance / goal) * 100));
-    document.getElementById('start-progress').style.width = pct + '%';
+    document.getElementById('start-progress').style.height = pct + '%';
     const remaining = Math.max(0, goal - state.customer.points_balance);
     document.getElementById('start-progress-note').textContent = remaining > 0
       ? `Noch ${remaining} Punkte bis zu deiner nächsten Prämie.`
