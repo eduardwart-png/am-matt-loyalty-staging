@@ -128,9 +128,15 @@ document.getElementById('auth-submit').addEventListener('click', async () => {
     await refreshIdentity();
     showView('start');
   } catch (err) {
-    showToast(err.data && err.data.error === 'invalid_credentials' ? 'Login fehlgeschlagen' :
-      err.data && err.data.error === 'email_already_registered' ? 'E-Mail bereits registriert' :
-      'Etwas ist schiefgelaufen. Bitte erneut versuchen.', 'error');
+    const msg = err.status === 429
+      ? `Zu viele Versuche. Bitte in ${err.data && err.data.retry_after_seconds ? Math.ceil(err.data.retry_after_seconds / 60) + ' Min.' : 'ein paar Minuten'} erneut versuchen.`
+      : err.data && err.data.error === 'invalid_credentials' ? 'Login fehlgeschlagen. E-Mail oder Passwort prüfen.' :
+        err.data && err.data.error === 'email_already_registered' ? 'E-Mail bereits registriert' :
+        'Etwas ist schiefgelaufen. Bitte erneut versuchen.';
+    showToast(msg, 'error');
+    // Sheet bleibt bewusst offen, damit der Nutzer den Fehler korrigieren kann (z.B. Tippfehler),
+    // aber der Submit-Button darf nicht dauerhaft blockiert wirken - hier keine weitere Aktion noetig,
+    // da das Sheet selbst per Abbrechen/Backdrop-Klick weiterhin schliessbar bleibt.
   }
 });
 
