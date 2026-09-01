@@ -172,6 +172,9 @@ async function refreshIdentity() {
 
 // --- START ---
 async function loadStart() {
+  if (state.token) {
+    try { state.customer = await api('/me'); } catch (e) { if (e.status === 401) { state.token = null; state.customer = null; localStorage.removeItem('am_matt_session'); updateAuthUi(); } }
+  }
   if (state.token && state.customer) {
     const first = (state.customer.display_name || '').split(' ')[0];
     document.getElementById('greeting-name').textContent = first ? `Schön, dass du da bist, ${escapeHtml(first)}.` : 'Schön, dass du da bist.';
@@ -646,3 +649,13 @@ document.getElementById('toggle-push').addEventListener('click', async function 
   await refreshIdentity();
   showView('start');
 })();
+
+// Punktestand automatisch aktualisieren, wenn der Nutzer in die App zurueckkehrt
+// (z.B. nach dem Zeigen der QR-Karte beim Bezahlen) - sonst sieht der Kunde live
+// gebuchte Punkte erst nach manuellem Reload (Root-Cause-Fix Pilot-Verifikation).
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && state.token) {
+    const startView = document.getElementById('view-start');
+    if (startView && startView.classList.contains('active')) loadStart();
+  }
+});
