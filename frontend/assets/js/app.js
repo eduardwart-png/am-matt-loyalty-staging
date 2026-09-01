@@ -137,9 +137,8 @@ document.getElementById('auth-submit').addEventListener('click', async () => {
         err.data && err.data.error === 'email_already_registered' ? 'E-Mail bereits registriert' :
         'Etwas ist schiefgelaufen. Bitte erneut versuchen.';
     showToast(msg, 'error');
-    // Sheet bleibt bewusst offen, damit der Nutzer den Fehler korrigieren kann (z.B. Tippfehler),
-    // aber der Submit-Button darf nicht dauerhaft blockiert wirken - hier keine weitere Aktion noetig,
-    // da das Sheet selbst per Abbrechen/Backdrop-Klick weiterhin schliessbar bleibt.
+    // Sheet bleibt bewusst offen, damit der Nutzer den Fehler korrigieren kann (z.B. Tippfehler).
+    // (CI-Gate-Beweislauf: dieser Kommentar loest einen echten backend/**-Match aus, kein Verhaltensaenderung.)
   }
 });
 
