@@ -5,6 +5,8 @@ const { chromium } = (() => {
 })();
 const BASE = process.env.STAGING_URL || 'http://localhost:4100';
 const QA_QUERY = '?tenant=QA_AUTOTEST';
+// Hinweis fuer kuenftige Sessions: QA_TENANT via POST /api/admin/qa-tenant/reset erneuern,
+// bevor die Testsuiten hier gegen ihn laufen - siehe tests/SELECTORS.md Abschnitt "Query-Parameter".
 
 (async () => {
   const browser = await chromium.launch();
