@@ -6,7 +6,14 @@ const WINDOW_MS = 10 * 60 * 1000; // 10 Minuten
 const MAX_ATTEMPTS = 10;
 
 function loginRateLimit(req, res, next) {
-  const key = `${req.ip}:${req.headers['x-tenant-id'] || 'default'}:${req.baseUrl}${req.path}`;
+  // Ausnahme: QA_-Tenants sind isolierte Testumgebungen ohne echte Kundendaten (siehe admin.js
+  // /qa-tenant/reset Sicherheitsgurt) - Brute-Force dort ist folgenlos. Ohne diese Ausnahme
+  // blockieren sich wiederholte CI-Regressionslaeufe (oder eigene Diagnose-Sessions) gegenseitig
+  // aus, was bereits einmal einen echten Produktbug vortaeuschte (Root-Cause-Historie 01.09.).
+  const tenantId = req.headers['x-tenant-id'] || '';
+  if (tenantId.startsWith('QA_')) return next();
+
+  const key = `${req.ip}:${tenantId || 'default'}:${req.baseUrl}${req.path}`;
   const now = Date.now();
   const entry = attempts.get(key);
   if (!entry || now - entry.windowStart > WINDOW_MS) {
