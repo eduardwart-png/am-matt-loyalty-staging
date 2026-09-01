@@ -1,6 +1,7 @@
 // admin.js — Operations Studio Logic
 const API_BASE = '/api/admin';
-const TENANT_ID = 'TENANT_001';
+// Tenant per URL-Query ueberschreibbar (?tenant=QA_TENANT) - siehe app.js fuer Begruendung.
+const TENANT_ID = new URLSearchParams(location.search).get('tenant') || 'TENANT_001';
 const state = { token: localStorage.getItem('am_matt_admin_session') || null };
 
 function api(path, opts = {}) {

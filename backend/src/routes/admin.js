@@ -309,4 +309,30 @@ router.post('/tenants', async (req, res, next) => {
   }
 });
 
+// --- QA-Tenant zuruecksetzen: loescht ALLE Daten eines Tenants und seedet ihn frisch neu.
+// Sicherheitsgurt: NUR Tenant-IDs mit Praefix 'QA_' erlaubt - verhindert kategorisch, dass dieser
+// destruktive Endpunkt jemals TENANT_001 oder einen anderen echten Kundendaten-Tenant treffen kann.
+// Loest die Root Cause der wiederholten Testdaten-Kontamination: Tests laufen jetzt komplett isoliert.
+router.post('/qa-tenant/reset', async (req, res, next) => {
+  try {
+    const targetId = (req.body && req.body.target_tenant_id) || '';
+    if (!targetId.startsWith('QA_')) {
+      return res.status(400).json({ error: 'qa_tenant_id_must_start_with_QA_' });
+    }
+    const { seedTenant } = require('../db/seed');
+    // Bestehende Daten des QA-Tenants vollstaendig loeschen (falls vorhanden), dann frisch seeden.
+    const tables = [
+      'loyalty_ledger', 'coupon_redemptions', 'push_subscriptions', 'referrals', 'favorites',
+      'customers', 'menu_items', 'menu_categories', 'rewards', 'coupons', 'campaigns',
+      'staff_users', 'opening_hours', 'jobs',
+    ];
+    for (const table of tables) {
+      await query(`DELETE FROM ${table} WHERE tenant_id = $1`, [targetId]).catch(() => {});
+    }
+    await query(`DELETE FROM tenants WHERE id = $1`, [targetId]).catch(() => {});
+    await seedTenant(targetId, 'QA Test-Restaurant', 'qa-test', 'qa-demo@am-matt.example', 'QA Demo Kunde');
+    res.json({ ok: true, tenant_id: targetId, message: 'QA-Tenant frisch geseedet, keine Restdaten.' });
+  } catch (err) { next(err); }
+});
+
 module.exports = router;

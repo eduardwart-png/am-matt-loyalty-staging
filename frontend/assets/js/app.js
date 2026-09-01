@@ -1,6 +1,9 @@
 // app.js — Am-Matt Customer Experience v4 (editorial, Restaurant+Loyalty als ein Produkt)
 const API_BASE = '/api/customer';
-const TENANT_ID = 'TENANT_001';
+// Tenant per URL-Query ueberschreibbar (?tenant=QA_TENANT) - ausschliesslich fuer automatisierte
+// Tests gedacht, damit diese NIE gegen den echten Produktiv-Tenant TENANT_001 laufen. Aendert nur,
+// welcher Tenant angesprochen wird - keine Rechteausweitung, Isolation bleibt serverseitig erzwungen.
+const TENANT_ID = new URLSearchParams(location.search).get('tenant') || 'TENANT_001';
 const REWARD_GOAL_FALLBACK = 600;
 
 const state = {
