@@ -5,6 +5,7 @@ const { verifyPassword } = require('../lib/crypto');
 const { createSession, authMiddleware } = require('../lib/session');
 const { addTransaction } = require('../lib/ledger');
 const { canRedeem, redeem } = require('../lib/coupons');
+const { loginRateLimit } = require('../lib/rateLimit');
 
 const router = express.Router();
 
@@ -17,7 +18,7 @@ async function requireTenant(req, res, next) {
 }
 router.use((req, res, next) => { requireTenant(req, res, next).catch(next); });
 
-router.post('/login', async (req, res, next) => {
+router.post('/login', loginRateLimit, async (req, res, next) => {
   try {
     const { username, password } = req.body || {};
     const { rows } = await query(

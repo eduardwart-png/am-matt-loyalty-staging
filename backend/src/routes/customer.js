@@ -5,6 +5,7 @@ const { hashPassword, verifyPassword, randomToken } = require('../lib/crypto');
 const { createSession, authMiddleware, destroySession } = require('../lib/session');
 const { getBalance, listTransactions } = require('../lib/ledger');
 const { isCouponCurrentlyValid } = require('../lib/coupons');
+const { loginRateLimit } = require('../lib/rateLimit');
 const { computeSegment, isVisibleToSegment } = require('../lib/segments');
 const { ensureReferralCode, applyReferralOnSignup, listReferrals } = require('../lib/referrals');
 const { addFavorite, removeFavorite, listFavorites } = require('../lib/favorites');
@@ -22,7 +23,7 @@ async function requireTenant(req, res, next) {
 router.use((req, res, next) => { requireTenant(req, res, next).catch(next); });
 
 // --- Registrierung ---
-router.post('/register', async (req, res, next) => {
+router.post('/register', loginRateLimit, async (req, res, next) => {
   try {
     const { email, password, displayName, birthday, referralCode } = req.body || {};
     if (!email || !password) return res.status(400).json({ error: 'email_and_password_required' });
@@ -54,7 +55,7 @@ router.post('/register', async (req, res, next) => {
 });
 
 // --- Login ---
-router.post('/login', async (req, res, next) => {
+router.post('/login', loginRateLimit, async (req, res, next) => {
   try {
     const { email, password } = req.body || {};
     const { rows } = await query(`SELECT * FROM customers WHERE tenant_id = $1 AND email = $2`, [req.tenant.id, email]);
