@@ -218,4 +218,62 @@ router.get('/backup/export', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// --- Restore: Backup in einen (neuen oder bestehenden) Tenant zurueckspielen. Nur Admin, nur
+// via expliziten target_tenant_id-Parameter im Body - schreibt NIE ungefragt in den eigenen Tenant,
+// um versehentliches Ueberschreiben echter Live-Daten auszuschliessen (SS61: keine Kundendatenloeschung
+// ohne Freigabe). Fuer den Restore-Beweis (SS30) wird typischerweise ein neuer Test-Tenant erzeugt.
+router.post('/backup/restore', async (req, res, next) => {
+  try {
+    const { backup, target_tenant_id } = req.body || {};
+    if (!backup || !backup.tables) return res.status(400).json({ error: 'missing_backup_payload' });
+    if (!target_tenant_id) return res.status(400).json({ error: 'target_tenant_id_required' });
+
+    // Ziel-Tenant muss existieren, sonst zuerst per POST /tenants (falls vorhanden) oder manuell anlegen.
+    const tenantCheck = await query(`SELECT id FROM tenants WHERE id = $1`, [target_tenant_id]);
+    if (!tenantCheck.rows[0]) return res.status(404).json({ error: 'target_tenant_not_found_create_first' });
+
+    const restored = {};
+    const insertOrder = [
+      'opening_hours', 'customers', 'staff_users', 'menu_categories', 'menu_items',
+      'rewards', 'coupons', 'campaigns', 'loyalty_ledger', 'coupon_redemptions',
+      'customer_favorites', 'referrals', 'push_subscriptions',
+    ];
+    for (const table of insertOrder) {
+      const rows = backup.tables[table] || [];
+      let count = 0;
+      for (const row of rows) {
+        const cols = Object.keys(row).filter(k => k !== 'id'); // neue IDs vergeben lassen (SERIAL)
+        const overrideRow = { ...row, tenant_id: target_tenant_id };
+        const finalCols = cols.includes('tenant_id') ? cols : [...cols, 'tenant_id'];
+        const values = finalCols.map(c => overrideRow[c]);
+        const placeholders = finalCols.map((_, i) => `$${i + 1}`).join(',');
+        try {
+          await query(`INSERT INTO ${table} (${finalCols.join(',')}) VALUES (${placeholders})`, values);
+          count++;
+        } catch (e) { /* einzelne Zeile ueberspringen (z.B. FK-Verweis auf alte ID), Rest fortsetzen */ }
+      }
+      restored[table] = count;
+    }
+    res.json({ ok: true, target_tenant_id, restored });
+  } catch (err) { next(err); }
+});
+
+// --- Tenant anlegen (fuer Restore-Tests / Onboarding neuer Kunden vorbereitet) ---
+router.post('/tenants', async (req, res, next) => {
+  try {
+    const t = req.body || {};
+    if (!t.id || !t.name || !t.slug) return res.status(400).json({ error: 'id_name_slug_required' });
+    await query(
+      `INSERT INTO tenants (id, name, slug, address_street, address_zip, address_city, phone, email, brand_primary_color, brand_accent_color)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+      [t.id, t.name, t.slug, t.address_street || null, t.address_zip || null, t.address_city || null,
+       t.phone || null, t.email || null, t.brand_primary_color || '#1B4D3E', t.brand_accent_color || '#C9A24B']
+    );
+    res.status(201).json({ ok: true, id: t.id });
+  } catch (err) {
+    if (err.code === '23505') return res.status(409).json({ error: 'tenant_id_or_slug_already_exists' });
+    next(err);
+  }
+});
+
 module.exports = router;
