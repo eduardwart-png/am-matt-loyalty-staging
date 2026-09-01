@@ -1,0 +1,55 @@
+name: Build iOS (Simulator, unsigned)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - 'native/**'
+      - '.github/workflows/build-ios.yml'
+
+jobs:
+  build-ios-simulator:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Capacitor dependencies
+        working-directory: native
+        run: npm install
+
+      - name: Sync Capacitor (copies config, no web build needed - app loads live URL)
+        working-directory: native
+        run: npx cap sync ios
+
+      - name: Install CocoaPods dependencies
+        working-directory: native/ios/App
+        run: pod install
+
+      # HINWEIS: Dieser Build ist bewusst NUR fuer den iOS-Simulator (unsigned) — er beweist,
+      # dass das Capacitor/Xcode-Projekt technisch korrekt ist und kompiliert.
+      # Eine auf einem ECHTEN iPhone installierbare Version (TestFlight/Ad-Hoc/App Store)
+      # erfordert zwingend ein kostenpflichtiges Apple Developer Program Konto (99 USD/Jahr)
+      # zur Code-Signierung — das ist eine bewusste Geld-Entscheidung, die Eddy selbst treffen muss.
+      - name: Build for iOS Simulator (no code signing required)
+        working-directory: native/ios/App
+        run: |
+          xcodebuild -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Upload Simulator build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: am-matt-stammgast-ios-simulator-build
+          path: native/ios/App/build/Build/Products/Debug-iphonesimulator/App.app
+          retention-days: 90

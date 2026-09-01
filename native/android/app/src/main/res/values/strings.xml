@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Am-Matt Stammgast</string>
+    <string name="title_activity_main">Am-Matt Stammgast</string>
+    <string name="package_name">com.ammatt.stammgast</string>
+    <string name="custom_url_scheme">com.ammatt.stammgast</string>
+</resources>

@@ -1,0 +1,20 @@
+{
+  "appId": "com.ammatt.stammgast",
+  "appName": "Am-Matt Stammgast",
+  "webDir": "www",
+  "server": {
+    "url": "https://am-matt-loyalty-staging.onrender.com",
+    "cleartext": false,
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 800,
+      "backgroundColor": "#2A2015",
+      "showSpinner": false
+    }
+  }
+}
