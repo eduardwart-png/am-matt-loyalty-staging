@@ -5,4 +5,6 @@ android/.gradle/
 ios/App/build/
 ios/App/Pods/
 ios/App/App.xcworkspace/xcuserdata/
+_dl/
+assets_source/
 *.log
