@@ -25,7 +25,11 @@ app.get('/api/health', async (req, res) => {
   try {
     const { pool } = require('./db');
     await pool.query('SELECT 1');
-    res.json({ ok: true, db: 'connected', ts: new Date().toISOString() });
+    // RENDER_GIT_COMMIT wird von Render automatisch gesetzt - erlaubt dem CI-Gate zu beweisen,
+    // dass GENAU der zuletzt gepushte Commit live ist, nicht nur "irgendein Server antwortet"
+    // (Root-Cause-Fund 01.09.: Render-Auto-Deploy haengte sich mehrfach fest, CI testete
+    // unbemerkt gegen einen veralteten Commit und meldete falsch-positive Bugs).
+    res.json({ ok: true, db: 'connected', ts: new Date().toISOString(), commit: process.env.RENDER_GIT_COMMIT || 'unknown' });
   } catch (err) {
     res.status(503).json({ ok: false, db: 'disconnected', error: err.message, ts: new Date().toISOString() });
   }
