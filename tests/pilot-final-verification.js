@@ -2,7 +2,10 @@
 // Simuliert exakt das, was der Pilotkunde/Vorfuehrung erleben wird.
 // Laeuft GEGEN DEN ISOLIERTEN QA-TENANT (QA_AUTOTEST), nicht gegen TENANT_001 - verhindert
 // die frueher wiederholt aufgetretene Testdaten-Kontamination der echten Produktivdaten.
-const { chromium } = require('C:/Users/eduar/AppData/Roaming/npm/node_modules/playwright');
+const { chromium } = (() => {
+  try { return require('playwright'); }
+  catch { return require('C:/Users/eduar/AppData/Roaming/npm/node_modules/playwright'); }
+})();
 const BASE = process.env.STAGING_URL || 'https://am-matt-loyalty-staging.onrender.com';
 const QA_QUERY = '?tenant=QA_AUTOTEST';
 

@@ -1,5 +1,8 @@
 // Automatisierter Cross-Device-Test mit Playwright — testet Mobile Browser App auf 4 Viewports
-const { chromium } = require('C:/Users/eduar/AppData/Roaming/npm/node_modules/playwright');
+const { chromium } = (() => {
+  try { return require('playwright'); }
+  catch { return require('C:/Users/eduar/AppData/Roaming/npm/node_modules/playwright'); }
+})();
 const QA_QUERY = '?tenant=QA_AUTOTEST';
 
 (async () => {

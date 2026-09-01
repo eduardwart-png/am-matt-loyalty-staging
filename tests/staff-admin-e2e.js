@@ -1,5 +1,8 @@
 // E2E-Test: Vertical Slice 1 + 2 komplett über echten Browser (nicht nur curl)
-const { chromium } = require('C:/Users/eduar/AppData/Roaming/npm/node_modules/playwright');
+const { chromium } = (() => {
+  try { return require('playwright'); }
+  catch { return require('C:/Users/eduar/AppData/Roaming/npm/node_modules/playwright'); }
+})();
 const BASE = process.env.STAGING_URL || 'http://localhost:4100';
 const QA_QUERY = '?tenant=QA_AUTOTEST';
 
