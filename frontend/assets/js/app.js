@@ -151,7 +151,7 @@ function updateAuthUi() {
     avatarBtn.style.display = 'flex';
     avatarBtn.textContent = (state.customer.display_name || state.customer.email || '?').trim().charAt(0).toUpperCase();
     document.getElementById('loyalty-teaser').style.display = 'none';
-    document.getElementById('loyalty-points').style.display = 'block';
+    document.getElementById('loyalty-points').style.display = 'flex';
   } else {
     loginBtn.style.display = 'inline-block';
     avatarBtn.style.display = 'none';
