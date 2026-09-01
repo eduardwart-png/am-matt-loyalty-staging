@@ -174,4 +174,25 @@ router.get('/jobs/status', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// --- Test-Kunden-Bereinigung (nur eng abgegrenzte E2E-Testmuster, nie echte Kundendaten) ---
+// Loescht ausschliesslich Kunden, deren E-Mail exakt mit einem der bekannten Test-Praefixe beginnt
+// (aus den automatisierten Testsuiten) und deren Name eines der bekannten Test-Namensmuster ist.
+// Schutz: Beide Bedingungen muessen zutreffen, sonst wird der Datensatz nicht angefasst.
+router.delete('/customers/test-data', async (req, res, next) => {
+  try {
+    const testNames = ['E2E Testkunde', 'Pilot Vorfuehrung', 'QR Tiefentest'];
+    const { rows } = await query(
+      `SELECT id, email, display_name FROM customers
+       WHERE tenant_id = $1 AND display_name = ANY($2)
+       AND (email LIKE 'e2e-full-%' OR email LIKE 'qr-deep-%' OR email LIKE 'pilot-final-%')`,
+      [req.tenant.id, testNames]
+    );
+    if (!rows.length) return res.json({ ok: true, deleted: 0 });
+    const ids = rows.map(r => r.id);
+    await query(`DELETE FROM loyalty_ledger WHERE tenant_id = $1 AND customer_id = ANY($2)`, [req.tenant.id, ids]);
+    await query(`DELETE FROM customers WHERE tenant_id = $1 AND id = ANY($2)`, [req.tenant.id, ids]);
+    res.json({ ok: true, deleted: rows.length, removed: rows.map(r => r.email) });
+  } catch (err) { next(err); }
+});
+
 module.exports = router;
