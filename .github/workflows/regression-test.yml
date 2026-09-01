@@ -29,8 +29,8 @@ jobs:
             echo "Warte auf Deploy... ($i/30)"; sleep 10
           done
 
-      - name: Zusaetzliche Pufferzeit fuer vollstaendigen Deploy-Rollout
-        run: sleep 20
+      - name: Zusaetzliche Pufferzeit fuer vollstaendigen Deploy-Rollout (Static Assets + API)
+        run: sleep 45
 
       - name: Regressionssuite ausfuehren (gegen isolierten QA-Tenant, NIE Produktivdaten)
         env:
