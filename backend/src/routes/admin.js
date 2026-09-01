@@ -239,23 +239,46 @@ router.post('/backup/restore', async (req, res, next) => {
       'rewards', 'coupons', 'campaigns', 'loyalty_ledger', 'coupon_redemptions',
       'customer_favorites', 'referrals', 'push_subscriptions',
     ];
+    // Fremdschluessel-Zuordnungen: welche Spalte in welcher Tabelle verweist auf welche andere Tabelle.
+    // Bei Cross-Tenant-Restore werden neue SERIAL-IDs vergeben, daher muss jeder Fremdschluessel-Wert
+    // auf die NEUE ID der Zieltabelle uebersetzt werden - sonst zeigen z.B. menu_items auf die alten,
+    // im Zieltenant nicht existierenden category_id (Direktive §40: keine stillen Datenfehler).
+    const fkMap = {
+      menu_items: { category_id: 'menu_categories' },
+      loyalty_ledger: { customer_id: 'customers' },
+      coupon_redemptions: { coupon_id: 'coupons', customer_id: 'customers' },
+      customer_favorites: { customer_id: 'customers', menu_item_id: 'menu_items' },
+      referrals: { referrer_customer_id: 'customers', referred_customer_id: 'customers' },
+      push_subscriptions: { customer_id: 'customers' },
+      campaigns: { linked_coupon_id: 'coupons' },
+    };
+    const idMaps = {}; // { tableName: { oldId: newId } }
     const { randomToken } = require('../lib/crypto');
     for (const table of insertOrder) {
       const rows = backup.tables[table] || [];
       let count = 0;
+      idMaps[table] = idMaps[table] || {};
       for (const row of rows) {
-        const cols = Object.keys(row).filter(k => k !== 'id'); // neue IDs vergeben lassen (SERIAL)
+        const cols = Object.keys(row).filter(k => k !== 'id');
         const overrideRow = { ...row, tenant_id: target_tenant_id };
-        // Global-eindeutige Felder (nicht nur pro Tenant) muessen beim Restore in einen ANDEREN
-        // Tenant neu generiert werden, sonst schlaegt die UNIQUE-Constraint fehl und die Zeile
-        // wird sonst STILL uebersprungen (Direktive §40: keine stillen Fehler).
         if (table === 'customers' && overrideRow.qr_code_token) overrideRow.qr_code_token = randomToken(16);
         if (table === 'customers' && overrideRow.referral_code) overrideRow.referral_code = null;
+        // Fremdschluessel auf die neu vergebenen IDs der bereits wiederhergestellten Referenz-Tabellen mappen.
+        const fks = fkMap[table] || {};
+        let skipRow = false;
+        for (const [fkCol, refTable] of Object.entries(fks)) {
+          if (overrideRow[fkCol] == null) continue;
+          const mapped = idMaps[refTable] && idMaps[refTable][overrideRow[fkCol]];
+          if (mapped == null) { skipRow = true; break; } // Referenz nicht wiederherstellbar -> Zeile ueberspringen, sichtbar melden
+          overrideRow[fkCol] = mapped;
+        }
+        if (skipRow) { errors.push({ table, row_hint: row.id, error: 'unresolved_foreign_key' }); continue; }
         const finalCols = cols.includes('tenant_id') ? cols : [...cols, 'tenant_id'];
         const values = finalCols.map(c => overrideRow[c]);
         const placeholders = finalCols.map((_, i) => `$${i + 1}`).join(',');
         try {
-          await query(`INSERT INTO ${table} (${finalCols.join(',')}) VALUES (${placeholders})`, values);
+          const insertRes = await query(`INSERT INTO ${table} (${finalCols.join(',')}) VALUES (${placeholders}) RETURNING id`, values);
+          idMaps[table][row.id] = insertRes.rows[0].id;
           count++;
         } catch (e) {
           errors.push({ table, row_hint: row.id, error: e.message });
