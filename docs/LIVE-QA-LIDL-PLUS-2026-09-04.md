@@ -26,8 +26,10 @@ echten API-Endpunkte (Beweise unten, keine Behauptung).
   Architektur bestätigt: kein separater POST-Kassenbon-Endpunkt vorhanden, Kassenbon-Einträge
   entstehen als Nebenprodukt echter Personal-Punktebuchungen (`POST /staff/customer/:id/add-points`).
   Nicht in dieser Sitzung end-to-end getestet, da das den kompletten Staff-Login-Flow braucht.
-- Web-Push-Versand — `vapid_public_key: null` live, VAPID-Keys lokal generiert aber nie
-  als Render-ENV gesetzt (braucht Render-Dashboard-Login, unverändert offen)
+- Web-Push-Versand — ERLEDIGT 04.09.2026: VAPID-Keys neu generiert, via Render-API als
+  ENV-Variablen gesetzt (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`), Redeploy ausgelöst und
+  live verifiziert: `GET /tenant-info` liefert jetzt einen echten `vapid_public_key` statt
+  `null`. Push-Versand ist serverseitig aktiv (siehe backend/src/lib/push.js configurePush()).
 - Geburtstagsbonus — Scheduler-Job, nicht in Echtzeit auslösbar ohne Datumsmanipulation
 
 ## Fazit
